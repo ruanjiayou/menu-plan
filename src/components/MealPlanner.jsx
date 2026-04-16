@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, subDays } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { getStorageKey, getMealData, saveMealData, getDishesData, getRepeatCheckEnabled } from '../utils/storage'
+import { getStorageKey, getMealData, saveMealData, getDishesData, getDishRepeatCheckEnabled } from '../utils/storage'
 import DayMealSelector from './DayMealSelector'
 import '../styles/MealPlanner.css'
 
@@ -47,30 +47,33 @@ const MealPlanner = () => {
     setCurrentDate(addMonths(currentDate, 1))
   }
 
-  // 检查菜品是否在最近7天重复（考虑重复判断开关）
+  // 检查菜品是否在最近7天重复（按菜品来判断，不按午晚餐）
   const isDishRepeatedInWeek = (date, dishName) => {
-    for (let i = 1; i <= 7; i++) {
+    const dateStr = format(date, 'yyyy-MM-dd')
+    
+    // 如果该菜品没有启用重复判断，则不标记为重复
+    if (!getDishRepeatCheckEnabled(dishName)) {
+      return false
+    }
+
+    let foundCount = 0
+
+    for (let i = 0; i <= 7; i++) {
       const checkDate = subDays(date, i)
-      const dateStr = format(checkDate, 'yyyy-MM-dd')
-      const dayMeals = meals[dateStr] || {}
+      const checkDateStr = format(checkDate, 'yyyy-MM-dd')
+      const dayMeals = meals[checkDateStr] || {}
       
-      // 检查午餐
-      if (getRepeatCheckEnabled(dateStr, 'lunch')) {
-        const lunch = dayMeals.lunch || []
-        if (lunch.includes(dishName)) {
-          return true
-        }
-      }
+      // 检查午餐和晚餐中是否包含这个菜品
+      const lunch = dayMeals.lunch || []
+      const dinner = dayMeals.dinner || []
       
-      // 检查晚餐
-      if (getRepeatCheckEnabled(dateStr, 'dinner')) {
-        const dinner = dayMeals.dinner || []
-        if (dinner.includes(dishName)) {
-          return true
-        }
+      if (lunch.includes(dishName) || dinner.includes(dishName)) {
+        foundCount++
       }
     }
-    return false
+
+    // 如果在过去7天（包括今天）中出现超过1次，则标记为重复
+    return foundCount > 1
   }
 
   const monthStart = startOfMonth(currentDate)

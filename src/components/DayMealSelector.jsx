@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 import { format } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
-import { X, Plus, Eye, EyeOff } from 'lucide-react'
-import { getRepeatCheckEnabled, setRepeatCheckEnabled } from '../utils/storage'
+import { X, Plus, Eye, EyeOff, Check } from 'lucide-react'
+import { getDishRepeatCheckEnabled, setDishRepeatCheckEnabled } from '../utils/storage'
 import '../styles/DayMealSelector.css'
 
 const DayMealSelector = ({ date, meals, dishes, isDishRepeatedInWeek, onMealSelect, onClose }) => {
@@ -12,28 +12,25 @@ const DayMealSelector = ({ date, meals, dishes, isDishRepeatedInWeek, onMealSele
   })
   
   const dateStr = format(date, 'yyyy-MM-dd')
-  const [lunchRepeatEnabled, setLunchRepeatEnabled] = useState(() => getRepeatCheckEnabled(dateStr, 'lunch'))
-  const [dinnerRepeatEnabled, setDinnerRepeatEnabled] = useState(() => getRepeatCheckEnabled(dateStr, 'dinner'))
+  const [lunchRepeatEnabled, setLunchRepeatEnabled] = useState(() => getDishRepeatCheckEnabled('lunch'))
+  const [dinnerRepeatEnabled, setDinnerRepeatEnabled] = useState(() => getDishRepeatCheckEnabled('dinner'))
   
   const [showDishList, setShowDishList] = useState(false)
   const [selectedMealTypeForAdd, setSelectedMealTypeForAdd] = useState('lunch')
-  const [selectedCategory, setSelectedCategory] = useState(null)
 
   const categories = [...new Set(dishes.map(d => d.category))].filter(Boolean)
-  const currentCategoryDishes = selectedCategory 
-    ? dishes.filter(d => d.category === selectedCategory) 
-    : []
 
-  const handleAddDish = (dishName) => {
+  const handleToggleDish = (dishName) => {
     setTempSelectedDishes(prev => {
       const mealDishes = prev[selectedMealTypeForAdd] || []
-      if (!mealDishes.includes(dishName)) {
-        return {
-          ...prev,
-          [selectedMealTypeForAdd]: [...mealDishes, dishName]
-        }
+      const exists = mealDishes.includes(dishName)
+      
+      return {
+        ...prev,
+        [selectedMealTypeForAdd]: exists 
+          ? mealDishes.filter(d => d !== dishName)
+          : [...mealDishes, dishName]
       }
-      return prev
     })
   }
 
@@ -47,13 +44,13 @@ const DayMealSelector = ({ date, meals, dishes, isDishRepeatedInWeek, onMealSele
   const handleToggleLunchRepeat = () => {
     const newState = !lunchRepeatEnabled
     setLunchRepeatEnabled(newState)
-    setRepeatCheckEnabled(dateStr, 'lunch', newState)
+    setDishRepeatCheckEnabled('lunch', newState)
   }
 
   const handleToggleDinnerRepeat = () => {
     const newState = !dinnerRepeatEnabled
     setDinnerRepeatEnabled(newState)
-    setRepeatCheckEnabled(dateStr, 'dinner', newState)
+    setDishRepeatCheckEnabled('dinner', newState)
   }
 
   const handleSaveAll = () => {
@@ -62,6 +59,11 @@ const DayMealSelector = ({ date, meals, dishes, isDishRepeatedInWeek, onMealSele
       dinner: tempSelectedDishes.dinner
     })
     onClose()
+  }
+
+  const openDishSelector = (mealType) => {
+    setSelectedMealTypeForAdd(mealType)
+    setShowDishList(true)
   }
 
   return (
@@ -117,10 +119,7 @@ const DayMealSelector = ({ date, meals, dishes, isDishRepeatedInWeek, onMealSele
             </div>
             <button 
               className="add-dish-btn"
-              onClick={() => {
-                setSelectedMealTypeForAdd('lunch')
-                setShowDishList(!showDishList)
-              }}
+              onClick={() => openDishSelector('lunch')}
             >
               <Plus size={16} /> 添加菜品
             </button>
@@ -168,78 +167,88 @@ const DayMealSelector = ({ date, meals, dishes, isDishRepeatedInWeek, onMealSele
             </div>
             <button 
               className="add-dish-btn"
-              onClick={() => {
-                setSelectedMealTypeForAdd('dinner')
-                setShowDishList(!showDishList)
-              }}
+              onClick={() => openDishSelector('dinner')}
             >
               <Plus size={16} /> 添加菜品
             </button>
           </div>
-
-          {/* 菜品列表 */}
-          {showDishList && (
-            <div className="dish-selector-section">
-              <h4>选择菜品 ({selectedMealTypeForAdd === 'lunch' ? '午餐' : '晚餐'})</h4>
-              
-              <div className="categories-section">
-                <h5>分类</h5>
-                <div className="categories-list">
-                  {categories.map(cat => (
-                    <button
-                      key={cat}
-                      className={`category-button ${selectedCategory === cat ? 'active' : ''}`}
-                      onClick={() => setSelectedCategory(cat)}
-                    >
-                      {cat}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="dishes-section">
-                <h5>{selectedCategory ? `${selectedCategory}菜品` : '选择分类'}</h5>
-                <div className="dishes-list">
-                  {currentCategoryDishes.map(dish => {
-                    const isAlreadySelected = tempSelectedDishes[selectedMealTypeForAdd].includes(dish.name)
-                    const mealRepeatEnabled = selectedMealTypeForAdd === 'lunch' ? lunchRepeatEnabled : dinnerRepeatEnabled
-                    const isRepeated = mealRepeatEnabled && isDishRepeatedInWeek(dish.name)
-                    
-                    return (
-                      <div 
-                        key={dish.name}
-                        className={`dish-item ${isRepeated ? 'repeated' : ''}`}
-                      >
-                        <div className="dish-info">
-                          <span className="dish-name">{dish.name}</span>
-                          {isRepeated && <span className="repeated-badge">重复⚠️</span>}
-                        </div>
-                        <button
-                          className={`add-btn ${isAlreadySelected ? 'added' : ''}`}
-                          onClick={() => handleAddDish(dish.name)}
-                          disabled={isAlreadySelected}
-                        >
-                          {isAlreadySelected ? '✓' : '+'}
-                        </button>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              <button 
-                className="close-selector-btn"
-                onClick={() => setShowDishList(false)}
-              >
-                关闭选择
-              </button>
-            </div>
-          )}
         </div>
 
         <div className="modal-footer">
           <button onClick={onClose} className="cancel-button">取消</button>
           <button onClick={handleSaveAll} className="save-button">保存</button>
+        </div>
+      </div>
+
+      {/* 菜品选择弹框 */}
+      {showDishList && (
+        <DishSelectorOverlay
+          selectedMealType={selectedMealTypeForAdd}
+          categories={categories}
+          dishes={dishes}
+          selectedDishes={tempSelectedDishes[selectedMealTypeForAdd]}
+          onToggleDish={handleToggleDish}
+          onClose={() => setShowDishList(false)}
+        />
+      )}
+    </div>
+  )
+}
+
+// 菜品选择组件
+const DishSelectorOverlay = ({ selectedMealType, categories, dishes, selectedDishes, onToggleDish, onClose }) => {
+  const [selectedCategory, setSelectedCategory] = useState(null)
+
+  const categoryDishes = selectedCategory 
+    ? dishes.filter(d => d.category === selectedCategory)
+    : []
+
+  const dishsByCategory = categories.map(cat => ({
+    category: cat,
+    dishes: dishes.filter(d => d.category === cat)
+  }))
+
+  return (
+    <div className="dish-selector-modal-overlay" onClick={onClose}>
+      <div className="dish-selector-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="dish-selector-header">
+          <h3>选择菜品 ({selectedMealType === 'lunch' ? '午餐' : '晚餐'})</h3>
+          <button onClick={onClose} className="close-button">
+            <X size={24} />
+          </button>
+        </div>
+
+        <div className="dish-selector-content">
+          {/* 分类栏显示所有菜品 */}
+          {dishsByCategory.map(({ category, dishes: categoryItems }) => (
+            <div key={category} className="dish-category-section">
+              <h4 className="category-title">{category}</h4>
+              <div className="dishes-grid">
+                {categoryItems.map(dish => {
+                  const isSelected = selectedDishes.includes(dish.name)
+                  
+                  return (
+                    <button
+                      key={dish.name}
+                      className={`dish-cell ${isSelected ? 'selected' : ''}`}
+                      onClick={() => onToggleDish(dish.name)}
+                    >
+                      <span className="dish-cell-name">{dish.name}</span>
+                      {isSelected && (
+                        <span className="dish-cell-check">
+                          <Check size={16} />
+                        </span>
+                      )}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="dish-selector-footer">
+          <button onClick={onClose} className="close-selector-btn">完成</button>
         </div>
       </div>
     </div>

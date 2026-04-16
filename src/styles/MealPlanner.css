@@ -76,6 +76,8 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
 }
 
 .calendar-day:hover {
@@ -98,30 +100,59 @@
 .day-number {
   font-weight: 600;
   color: #333;
-  font-size: 14px;
+  font-size: 13px;
 }
 
-.day-meals {
+.meal-block {
   display: flex;
   gap: 4px;
-  margin-top: 4px;
-  flex-wrap: wrap;
+  align-items: flex-start;
+  font-size: 10px;
+  flex: 1;
+  min-height: 0;
 }
 
-.meal-badge {
-  font-size: 11px;
-  padding: 2px 6px;
-  border-radius: 3px;
+.meal-label {
   font-weight: 600;
   color: white;
+  padding: 2px 4px;
+  border-radius: 2px;
+  min-width: 18px;
+  text-align: center;
+  flex-shrink: 0;
 }
 
-.meal-badge.lunch {
+.lunch-block .meal-label {
   background-color: #ff9800;
 }
 
-.meal-badge.dinner {
+.dinner-block .meal-label {
   background-color: #2196f3;
+}
+
+.meal-dishes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  flex: 1;
+}
+
+.dish-tag {
+  background-color: #f0f0f0;
+  color: #333;
+  padding: 1px 3px;
+  border-radius: 2px;
+  font-size: 9px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.dish-tag.repeated {
+  background-color: #ffc107;
+  color: white;
+  font-weight: 600;
 }
 
 @media (max-width: 768px) {
@@ -135,14 +166,18 @@
 
   .calendar-day {
     padding: 6px;
+    gap: 2px;
   }
 
   .day-number {
     font-size: 12px;
   }
 
-  .meal-badge {
-    font-size: 10px;
-    padding: 1px 4px;
+  .meal-block {
+    font-size: 9px;
+  }
+
+  .dish-tag {
+    font-size: 8px;
   }
 }

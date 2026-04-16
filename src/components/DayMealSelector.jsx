@@ -116,101 +116,115 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
     setShowDishList(true)
   }
 
-  // 当菜品或重复设置改变时，更新15天范围内的重复状态
-  const updateRepeatStatusForDish = (dishId, mealData) => {
+  // 当菜品或重复设置改变时，更新15天范围内所有可能受影响的菜品的重复状态
+  const updateRepeatStatusForAllDishes = (mealData) => {
     const mealsDataForMonth = getMealData(date)
     const allMealsData = { ...mealsDataForMonth, ...mealData }
     
-    const dishRepeatStatus = calculateDishRepeatStatus(dishId, allMealsData)
-
-    // 更新15天范围内所有日期的重复状态
     const newRepeatStatus = { ...currentRepeatStatus }
     
-    for (let i = -7; i <= 7; i++) {
-      const checkDate = addDays(date, i)
-      const checkDateStr = format(checkDate, 'yyyy-MM-dd')
-      
-      if (!newRepeatStatus[checkDateStr]) {
-        newRepeatStatus[checkDateStr] = { lunch: {}, dinner: {} }
-      }
+    // 遍历所有菜品
+    dishes.forEach(dish => {
+      const dishId = dish.id
+      const dishRepeatStatus = calculateDishRepeatStatus(dishId, allMealsData)
 
-      // 更新这个日期的午餐重复状态
-      if (dishRepeatStatus.lunch[checkDateStr] !== undefined) {
-        const enabled = getDishRepeatCheckEnabled(checkDateStr, dishId)
-        newRepeatStatus[checkDateStr].lunch[dishId] = dishRepeatStatus.lunch[checkDateStr] && enabled
-      }
+      // 更新15天范围内所有日期的重复状态
+      for (let i = -7; i <= 7; i++) {
+        const checkDate = addDays(date, i)
+        const checkDateStr = format(checkDate, 'yyyy-MM-dd')
+        
+        if (!newRepeatStatus[checkDateStr]) {
+          newRepeatStatus[checkDateStr] = { lunch: {}, dinner: {} }
+        }
 
-      // 更新这个日期的晚餐重复状态
-      if (dishRepeatStatus.dinner[checkDateStr] !== undefined) {
-        const enabled = getDishRepeatCheckEnabled(checkDateStr, dishId)
-        newRepeatStatus[checkDateStr].dinner[dishId] = dishRepeatStatus.dinner[checkDateStr] && enabled
+        // 更新这个日期的午餐重复状态
+        if (dishRepeatStatus.lunch[checkDateStr] !== undefined) {
+          const enabled = getDishRepeatCheckEnabled(checkDateStr, dishId)
+          newRepeatStatus[checkDateStr].lunch[dishId] = dishRepeatStatus.lunch[checkDateStr] && enabled
+        }
+
+        // 更新这个日期的晚餐重复状态
+        if (dishRepeatStatus.dinner[checkDateStr] !== undefined) {
+          const enabled = getDishRepeatCheckEnabled(checkDateStr, dishId)
+          newRepeatStatus[checkDateStr].dinner[dishId] = dishRepeatStatus.dinner[checkDateStr] && enabled
+        }
       }
-    }
+    })
 
     setCurrentRepeatStatus(newRepeatStatus)
     onRepeatStatusChange(newRepeatStatus)
   }
 
   const handleToggleDish = (dishItem) => {
-    setTempSelectedDishes(prev => {
-      const mealDishes = prev[selectedMealTypeForAdd] || []
-      const exists = mealDishes.some(d => d.id === dishItem.id)
-      
-      const newMeals = {
+    const mealDishes = tempSelectedDishes[selectedMealTypeForAdd] || []
+    const exists = mealDishes.some(d => d.id === dishItem.id)
+    
+    const newMeals = {
+      ...tempSelectedDishes,
+      [selectedMealTypeForAdd]: exists 
+        ? mealDishes.filter(d => d.id !== dishItem.id)
+        : [...mealDishes, dishItem]
+    }
+
+    // 立即更新本地状态
+    setTempSelectedDishes(newMeals)
+
+    // 立即保存数据
+    saveMealData(date, newMeals)
+    
+    // 更新重复判断设置
+    if (!exists) {
+      const key = `${selectedMealTypeForAdd}_${dishItem.id}`
+      setDishRepeatSettings(prev => ({
         ...prev,
-        [selectedMealTypeForAdd]: exists 
-          ? mealDishes.filter(d => d.id !== dishItem.id)
-          : [...mealDishes, dishItem]
-      }
+        [key]: getDishRepeatCheckEnabled(dateStr, dishItem.id)
+      }))
+      // 保存重复判断设置
+      setDishRepeatCheckEnabled(dateStr, dishItem.id, true)
+    }
 
-      // 立即保存数据
-      saveMealData(date, newMeals)
-      
-      // 更新重复判断设置
-      if (!exists) {
-        const key = `${selectedMealTypeForAdd}_${dishItem.id}`
-        setDishRepeatSettings(prev => ({
-          ...prev,
-          [key]: getDishRepeatCheckEnabled(dateStr, dishItem.id)
-        }))
-        // 保存重复判断设置
-        setDishRepeatCheckEnabled(dateStr, dishItem.id, true)
-      }
+    // 回调更新父组件
+    onMealSelect(newMeals)
 
-      // 回调更新父组件
-      onMealSelect(newMeals)
-
-      // 更新15天范围内的重复状态
-      updateRepeatStatusForDish(dishItem.id, newMeals)
-      
-      return newMeals
-    })
+    // 使用新的菜单数据立即更新所有菜品在15天范围内的重复状态
+    updateRepeatStatusForAllDishes(newMeals)
+    
+    // 同时更新菜品选择器的重复状态（使用已保存的新数据）
+    if (showDishList) {
+      const allDishesStatus = calculateAllDishesRepeatStatus(newMeals)
+      setDishSelectorRepeatStatus(allDishesStatus)
+    }
   }
 
   const handleRemoveDish = (mealType, dishId) => {
-    setTempSelectedDishes(prev => {
-      const newMeals = {
-        ...prev,
-        [mealType]: prev[mealType].filter(d => d.id !== dishId)
-      }
-      
-      // 立即保存数据
-      saveMealData(date, newMeals)
-      
-      // 移除该菜品的重复判断设置
-      const key = `${mealType}_${dishId}`
-      const newSettings = { ...dishRepeatSettings }
-      delete newSettings[key]
-      setDishRepeatSettings(newSettings)
+    const newMeals = {
+      ...tempSelectedDishes,
+      [mealType]: tempSelectedDishes[mealType].filter(d => d.id !== dishId)
+    }
+    
+    // 立即更新本地状态
+    setTempSelectedDishes(newMeals)
 
-      // 回调更新父组件
-      onMealSelect(newMeals)
+    // 立即保存数据
+    saveMealData(date, newMeals)
+    
+    // 移除该菜品的重复判断设置
+    const key = `${mealType}_${dishId}`
+    const newSettings = { ...dishRepeatSettings }
+    delete newSettings[key]
+    setDishRepeatSettings(newSettings)
 
-      // 更新15天范围内的重复状态
-      updateRepeatStatusForDish(dishId, newMeals)
-      
-      return newMeals
-    })
+    // 回调更新父组件
+    onMealSelect(newMeals)
+
+    // 使用新的菜单数据立即更新所有菜品在15天范围内的重复状态
+    updateRepeatStatusForAllDishes(newMeals)
+    
+    // 同时更新菜品选择器的重复状态（使用已保存的新数据）
+    if (showDishList) {
+      const allDishesStatus = calculateAllDishesRepeatStatus(newMeals)
+      setDishSelectorRepeatStatus(allDishesStatus)
+    }
   }
 
   const handleToggleDishRepeat = (mealType, dishId) => {
@@ -225,42 +239,15 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
     // 保存重复判断设置
     setDishRepeatCheckEnabled(dateStr, dishId, newEnabled)
 
-    // 更新15天范围内的重复状态
+    // 更新所有菜品在15天范围内的重��状态
     const mealsDataForMonth = getMealData(date)
-    const dishRepeatStatus = calculateDishRepeatStatus(dishId, mealsDataForMonth)
-
-    const newRepeatStatus = { ...currentRepeatStatus }
+    updateRepeatStatusForAllDishes(mealsDataForMonth)
     
-    for (let i = -7; i <= 7; i++) {
-      const checkDate = addDays(date, i)
-      const checkDateStr = format(checkDate, 'yyyy-MM-dd')
-      
-      if (!newRepeatStatus[checkDateStr]) {
-        newRepeatStatus[checkDateStr] = { lunch: {}, dinner: {} }
-      }
-
-      // 如果开启重复判断，更新重复状态；否则设为false
-      if (newEnabled) {
-        if (dishRepeatStatus.lunch[checkDateStr]) {
-          newRepeatStatus[checkDateStr].lunch[dishId] = true
-        } else {
-          newRepeatStatus[checkDateStr].lunch[dishId] = false
-        }
-        
-        if (dishRepeatStatus.dinner[checkDateStr]) {
-          newRepeatStatus[checkDateStr].dinner[dishId] = true
-        } else {
-          newRepeatStatus[checkDateStr].dinner[dishId] = false
-        }
-      } else {
-        // 关闭重复判断，清除该菜品的重复标记
-        newRepeatStatus[checkDateStr].lunch[dishId] = false
-        newRepeatStatus[checkDateStr].dinner[dishId] = false
-      }
+    // 同时更新菜品选择器的重复状态
+    if (showDishList) {
+      const allDishesStatus = calculateAllDishesRepeatStatus(mealsDataForMonth)
+      setDishSelectorRepeatStatus(allDishesStatus)
     }
-
-    setCurrentRepeatStatus(newRepeatStatus)
-    onRepeatStatusChange(newRepeatStatus)
   }
 
   return (

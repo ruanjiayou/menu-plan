@@ -114,6 +114,14 @@ const MealPlanner = () => {
     updateRepeatStatus(newMeals)
   }
 
+  // 处理子组件传来的重复状态变化
+  const handleRepeatStatusChange = (newRepeatStatus) => {
+    setRepeatStatus(prev => ({
+      ...prev,
+      ...newRepeatStatus
+    }))
+  }
+
   const handlePrevMonth = () => {
     setCurrentDate(subMonths(currentDate, 1))
   }
@@ -203,6 +211,7 @@ const MealPlanner = () => {
           dishes={dishes}
           repeatStatus={repeatStatus[format(selectedDay, 'yyyy-MM-dd')] || { lunch: {}, dinner: {} }}
           onMealSelect={(mealData) => handleMealSelect(selectedDay, mealData)}
+          onRepeatStatusChange={handleRepeatStatusChange}
           onClose={() => setSelectedDay(null)}
         />
       )}

@@ -5,7 +5,7 @@ import { X, Plus, Check, Eye, EyeOff } from 'lucide-react'
 import { getDishRepeatCheckEnabled, setDishRepeatCheckEnabled, getMealData, saveMealData, getStorageKey } from '../utils/storage'
 import '../styles/DayMealSelector.css'
 
-const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onClose }) => {
+const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRepeatStatusChange, onClose }) => {
   const [tempSelectedDishes, setTempSelectedDishes] = useState({
     lunch: meals.lunch || [],
     dinner: meals.dinner || []
@@ -21,6 +21,8 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onCl
     return settings
   })
   
+  const [currentRepeatStatus, setCurrentRepeatStatus] = useState(repeatStatus)
+  
   const dateStr = format(date, 'yyyy-MM-dd')
   const [showDishList, setShowDishList] = useState(false)
   const [selectedMealTypeForAdd, setSelectedMealTypeForAdd] = useState('lunch')
@@ -29,6 +31,81 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onCl
     const firstDish = dishes.find(d => d.categoryId === catId)
     return { id: catId, title: firstDish?.categoryTitle }
   })
+
+  // 计算单个菜品在15天范围内的重复情况
+  const calculateDishRepeatStatus = (dishId, mealData) => {
+    const status = {
+      lunch: {},
+      dinner: {}
+    }
+
+    // 检查这个菜品在最近15天内是否重复
+    let foundDates = []
+    
+    for (let i = -7; i <= 7; i++) {
+      const checkDate = addDays(date, i)
+      const checkDateStr = format(checkDate, 'yyyy-MM-dd')
+      const checkMeals = mealData[checkDateStr] || {}
+      const checkLunch = checkMeals.lunch || []
+      const checkDinner = checkMeals.dinner || []
+
+      // 找到所有包含这个菜品的日期和餐次
+      if (checkLunch.some(d => d.id === dishId)) {
+        foundDates.push({ date: checkDateStr, type: 'lunch' })
+      }
+      if (checkDinner.some(d => d.id === dishId)) {
+        foundDates.push({ date: checkDateStr, type: 'dinner' })
+      }
+    }
+
+    // 如果这个菜品出现超过1次，标记所有出现的位置为重复
+    if (foundDates.length > 1) {
+      foundDates.forEach(({ date: foundDateStr, type }) => {
+        if (type === 'lunch') {
+          status.lunch[foundDateStr] = true
+        } else {
+          status.dinner[foundDateStr] = true
+        }
+      })
+    }
+
+    return status
+  }
+
+  // 当菜品或重复设置改变时，更新15天范围内的重复状态
+  const updateRepeatStatusForDish = (dishId, mealData) => {
+    const mealsDataForMonth = getMealData(date)
+    const allMealsData = { ...mealsDataForMonth, ...mealData }
+    
+    const dishRepeatStatus = calculateDishRepeatStatus(dishId, allMealsData)
+
+    // 更新15天范围内所有日期的重复状态
+    const newRepeatStatus = { ...currentRepeatStatus }
+    
+    for (let i = -7; i <= 7; i++) {
+      const checkDate = addDays(date, i)
+      const checkDateStr = format(checkDate, 'yyyy-MM-dd')
+      
+      if (!newRepeatStatus[checkDateStr]) {
+        newRepeatStatus[checkDateStr] = { lunch: {}, dinner: {} }
+      }
+
+      // 更新这个日期的午餐重复状态
+      if (dishRepeatStatus.lunch[checkDateStr] !== undefined) {
+        const enabled = getDishRepeatCheckEnabled(checkDateStr, dishId)
+        newRepeatStatus[checkDateStr].lunch[dishId] = dishRepeatStatus.lunch[checkDateStr] && enabled
+      }
+
+      // 更新这个日期的晚餐重复状态
+      if (dishRepeatStatus.dinner[checkDateStr] !== undefined) {
+        const enabled = getDishRepeatCheckEnabled(checkDateStr, dishId)
+        newRepeatStatus[checkDateStr].dinner[dishId] = dishRepeatStatus.dinner[checkDateStr] && enabled
+      }
+    }
+
+    setCurrentRepeatStatus(newRepeatStatus)
+    onRepeatStatusChange(newRepeatStatus)
+  }
 
   const handleToggleDish = (dishItem) => {
     setTempSelectedDishes(prev => {
@@ -58,6 +135,9 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onCl
 
       // 回调更新父组件
       onMealSelect(newMeals)
+
+      // 更新15天范围内的重复状态
+      updateRepeatStatusForDish(dishItem.id, newMeals)
       
       return newMeals
     })
@@ -81,6 +161,9 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onCl
 
       // 回调更新父组件
       onMealSelect(newMeals)
+
+      // 更新15天范围内的重复状态
+      updateRepeatStatusForDish(dishId, newMeals)
       
       return newMeals
     })
@@ -88,12 +171,52 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onCl
 
   const handleToggleDishRepeat = (mealType, dishId) => {
     const key = `${mealType}_${dishId}`
+    const newEnabled = !dishRepeatSettings[key]
+    
     setDishRepeatSettings(prev => ({
       ...prev,
-      [key]: !prev[key]
+      [key]: newEnabled
     }))
-    // 保存���复判断设置
-    setDishRepeatCheckEnabled(dateStr, dishId, !dishRepeatSettings[key])
+    
+    // 保存重复判断设置
+    setDishRepeatCheckEnabled(dateStr, dishId, newEnabled)
+
+    // 更新15天范围内的重复状态
+    const mealsDataForMonth = getMealData(date)
+    const dishRepeatStatus = calculateDishRepeatStatus(dishId, mealsDataForMonth)
+
+    const newRepeatStatus = { ...currentRepeatStatus }
+    
+    for (let i = -7; i <= 7; i++) {
+      const checkDate = addDays(date, i)
+      const checkDateStr = format(checkDate, 'yyyy-MM-dd')
+      
+      if (!newRepeatStatus[checkDateStr]) {
+        newRepeatStatus[checkDateStr] = { lunch: {}, dinner: {} }
+      }
+
+      // 如果开启重复判断，更新重复状态；否则设为false
+      if (newEnabled) {
+        if (dishRepeatStatus.lunch[checkDateStr]) {
+          newRepeatStatus[checkDateStr].lunch[dishId] = true
+        } else {
+          newRepeatStatus[checkDateStr].lunch[dishId] = false
+        }
+        
+        if (dishRepeatStatus.dinner[checkDateStr]) {
+          newRepeatStatus[checkDateStr].dinner[dishId] = true
+        } else {
+          newRepeatStatus[checkDateStr].dinner[dishId] = false
+        }
+      } else {
+        // 关闭重复判断，清除该菜品的重复标记
+        newRepeatStatus[checkDateStr].lunch[dishId] = false
+        newRepeatStatus[checkDateStr].dinner[dishId] = false
+      }
+    }
+
+    setCurrentRepeatStatus(newRepeatStatus)
+    onRepeatStatusChange(newRepeatStatus)
   }
 
   const openDishSelector = (mealType) => {
@@ -120,7 +243,7 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onCl
                 tempSelectedDishes.lunch.map(dish => {
                   const key = `lunch_${dish.id}`
                   const repeatEnabled = dishRepeatSettings[key] !== false
-                  const isRepeated = repeatStatus.lunch[dish.id]
+                  const isRepeated = currentRepeatStatus.lunch && currentRepeatStatus.lunch[dish.id]
                   
                   return (
                     <div key={key} className={`dish-tag-wrapper ${isRepeated && repeatEnabled ? 'repeated' : ''}`}>
@@ -166,7 +289,7 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onCl
                 tempSelectedDishes.dinner.map(dish => {
                   const key = `dinner_${dish.id}`
                   const repeatEnabled = dishRepeatSettings[key] !== false
-                  const isRepeated = repeatStatus.dinner[dish.id]
+                  const isRepeated = currentRepeatStatus.dinner && currentRepeatStatus.dinner[dish.id]
                   
                   return (
                     <div key={key} className={`dish-tag-wrapper ${isRepeated && repeatEnabled ? 'repeated' : ''}`}>

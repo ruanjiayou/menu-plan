@@ -2,7 +2,7 @@ import { format } from 'date-fns'
 
 const STORAGE_PREFIX = 'meal_planner_'
 const DISHES_KEY = 'dishes'
-const DISH_REPEAT_CONFIG_KEY = 'meal_dish_repeat_config'
+const MEAL_REPEAT_CONFIG_KEY = 'meal_repeat_config'
 
 // 获取指定月份的存储键
 export const getStorageKey = (date) => {
@@ -33,25 +33,27 @@ export const saveDishesData = (data) => {
   localStorage.setItem(DISHES_KEY, JSON.stringify(data))
 }
 
-// 获取菜品重复判断配置（按菜品名称来）
-export const getDishRepeatConfig = () => {
-  const data = localStorage.getItem(DISH_REPEAT_CONFIG_KEY)
+// 获取菜品重复判断配置（按菜品ID）
+const getRepeatConfig = () => {
+  const data = localStorage.getItem(MEAL_REPEAT_CONFIG_KEY)
   return data ? JSON.parse(data) : {}
 }
 
-export const saveDishRepeatConfig = (config) => {
-  localStorage.setItem(DISH_REPEAT_CONFIG_KEY, JSON.stringify(config))
+const saveRepeatConfig = (config) => {
+  localStorage.setItem(MEAL_REPEAT_CONFIG_KEY, JSON.stringify(config))
 }
 
-// 获取指定菜品的重复判断开关 (默认为 true - 参与判断)
-export const getDishRepeatCheckEnabled = (dishName) => {
-  const config = getDishRepeatConfig()
-  return config[dishName] !== false // 默认 true
+// 获取指定菜品ID在指定日期的重复判断开关 (默认为 true - 参与判断)
+export const getDishRepeatCheckEnabled = (dateStr, dishId) => {
+  const config = getRepeatConfig()
+  const key = `${dateStr}_${dishId}`
+  return config[key] !== false // 默认 true
 }
 
 // 设置菜品重复判断开关
-export const setDishRepeatCheckEnabled = (dishName, enabled) => {
-  const config = getDishRepeatConfig()
-  config[dishName] = enabled
-  saveDishRepeatConfig(config)
+export const setDishRepeatCheckEnabled = (dateStr, dishId, enabled) => {
+  const config = getRepeatConfig()
+  const key = `${dateStr}_${dishId}`
+  config[key] = enabled
+  saveRepeatConfig(config)
 }

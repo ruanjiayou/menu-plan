@@ -10,6 +10,7 @@ const MealPlanner = () => {
   const [meals, setMeals] = useState({})
   const [dishes, setDishes] = useState([])
   const [selectedDay, setSelectedDay] = useState(null)
+  const [repeatStatus, setRepeatStatus] = useState({}) // 存储每个日期的重复状态
 
   useEffect(() => {
     loadMealsData()
@@ -19,11 +20,80 @@ const MealPlanner = () => {
   const loadMealsData = () => {
     const data = getMealData(currentDate)
     setMeals(data)
+    updateRepeatStatus(data)
   }
 
   const loadDishes = () => {
     const dishesData = getDishesData()
     setDishes(dishesData)
+  }
+
+  // 计算重复状态
+  const updateRepeatStatus = (mealsData) => {
+    const status = {}
+    const allDates = Object.keys(mealsData)
+
+    allDates.forEach(dateStr => {
+      status[dateStr] = {
+        lunch: {},
+        dinner: {}
+      }
+
+      const dayMeals = mealsData[dateStr] || {}
+      const lunchDishes = dayMeals.lunch || []
+      const dinnerDishes = dayMeals.dinner || []
+      const date = new Date(dateStr)
+
+      // 检查午餐菜品
+      lunchDishes.forEach(dishItem => {
+        const dishId = dishItem.id
+        const enabled = getDishRepeatCheckEnabled(dateStr, dishId)
+        
+        if (enabled) {
+          let foundCount = 0
+          for (let i = 0; i <= 7; i++) {
+            const checkDate = subDays(date, i)
+            const checkDateStr = format(checkDate, 'yyyy-MM-dd')
+            const checkMeals = mealsData[checkDateStr] || {}
+            const checkLunch = checkMeals.lunch || []
+            const checkDinner = checkMeals.dinner || []
+
+            if (checkLunch.some(d => d.id === dishId) || checkDinner.some(d => d.id === dishId)) {
+              foundCount++
+            }
+          }
+          status[dateStr].lunch[dishId] = foundCount > 1
+        } else {
+          status[dateStr].lunch[dishId] = false
+        }
+      })
+
+      // 检查晚餐菜品
+      dinnerDishes.forEach(dishItem => {
+        const dishId = dishItem.id
+        const enabled = getDishRepeatCheckEnabled(dateStr, dishId)
+        
+        if (enabled) {
+          let foundCount = 0
+          for (let i = 0; i <= 7; i++) {
+            const checkDate = subDays(date, i)
+            const checkDateStr = format(checkDate, 'yyyy-MM-dd')
+            const checkMeals = mealsData[checkDateStr] || {}
+            const checkLunch = checkMeals.lunch || []
+            const checkDinner = checkMeals.dinner || []
+
+            if (checkLunch.some(d => d.id === dishId) || checkDinner.some(d => d.id === dishId)) {
+              foundCount++
+            }
+          }
+          status[dateStr].dinner[dishId] = foundCount > 1
+        } else {
+          status[dateStr].dinner[dishId] = false
+        }
+      })
+    })
+
+    setRepeatStatus(status)
   }
 
   const handleMealSelect = (date, mealData) => {
@@ -37,6 +107,7 @@ const MealPlanner = () => {
     newMeals[dateStr] = mealData
     setMeals(newMeals)
     saveMealData(currentDate, newMeals)
+    updateRepeatStatus(newMeals)
   }
 
   const handlePrevMonth = () => {
@@ -45,35 +116,6 @@ const MealPlanner = () => {
 
   const handleNextMonth = () => {
     setCurrentDate(addMonths(currentDate, 1))
-  }
-
-  // 检查菜品是否在最近7天重复（按菜品来判断，不按午晚餐）
-  const isDishRepeatedInWeek = (date, dishName) => {
-    const dateStr = format(date, 'yyyy-MM-dd')
-    
-    // 如果该菜品没有启用重复判断，则不标记为重复
-    if (!getDishRepeatCheckEnabled(dishName)) {
-      return false
-    }
-
-    let foundCount = 0
-
-    for (let i = 0; i <= 7; i++) {
-      const checkDate = subDays(date, i)
-      const checkDateStr = format(checkDate, 'yyyy-MM-dd')
-      const dayMeals = meals[checkDateStr] || {}
-      
-      // 检查午餐和晚餐中是否包含这个菜品
-      const lunch = dayMeals.lunch || []
-      const dinner = dayMeals.dinner || []
-      
-      if (lunch.includes(dishName) || dinner.includes(dishName)) {
-        foundCount++
-      }
-    }
-
-    // 如果在过去7天（包括今天）中出现超过1次，则标记为重复
-    return foundCount > 1
   }
 
   const monthStart = startOfMonth(currentDate)
@@ -105,6 +147,7 @@ const MealPlanner = () => {
             const dayMeals = meals[dateStr] || {}
             const lunch = dayMeals.lunch || []
             const dinner = dayMeals.dinner || []
+            const dayRepeatStatus = repeatStatus[dateStr] || { lunch: {}, dinner: {} }
 
             return (
               <div 
@@ -120,10 +163,10 @@ const MealPlanner = () => {
                   <div className="meal-dishes">
                     {lunch.map(dish => (
                       <span 
-                        key={dish}
-                        className={`dish-tag ${isDishRepeatedInWeek(day, dish) ? 'repeated' : ''}`}
+                        key={dish.id}
+                        className={`dish-tag ${dayRepeatStatus.lunch[dish.id] ? 'repeated' : ''}`}
                       >
-                        {dish}
+                        {dish.title}
                       </span>
                     ))}
                   </div>
@@ -135,10 +178,10 @@ const MealPlanner = () => {
                   <div className="meal-dishes">
                     {dinner.map(dish => (
                       <span 
-                        key={dish}
-                        className={`dish-tag ${isDishRepeatedInWeek(day, dish) ? 'repeated' : ''}`}
+                        key={dish.id}
+                        className={`dish-tag ${dayRepeatStatus.dinner[dish.id] ? 'repeated' : ''}`}
                       >
-                        {dish}
+                        {dish.title}
                       </span>
                     ))}
                   </div>
@@ -154,7 +197,7 @@ const MealPlanner = () => {
           date={selectedDay}
           meals={meals[format(selectedDay, 'yyyy-MM-dd')] || {}}
           dishes={dishes}
-          isDishRepeatedInWeek={(dishName) => isDishRepeatedInWeek(selectedDay, dishName)}
+          repeatStatus={repeatStatus[format(selectedDay, 'yyyy-MM-dd')] || { lunch: {}, dinner: {} }}
           onMealSelect={(mealData) => handleMealSelect(selectedDay, mealData)}
           onClose={() => setSelectedDay(null)}
         />

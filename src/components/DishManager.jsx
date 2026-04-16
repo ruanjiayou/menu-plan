@@ -6,7 +6,8 @@ import '../styles/DishManager.css'
 const DishManager = () => {
   const [dishes, setDishes] = useState([])
   const [newDishName, setNewDishName] = useState('')
-  const [newCategory, setNewCategory] = useState('')
+  const [newCategoryTitle, setNewCategoryTitle] = useState('')
+  const [newCategoryId, setNewCategoryId] = useState('')
   const [categories, setCategories] = useState([])
 
   useEffect(() => {
@@ -16,32 +17,49 @@ const DishManager = () => {
   const loadDishes = () => {
     const data = getDishesData()
     setDishes(data)
-    const cats = [...new Set(data.map(d => d.category))].filter(Boolean)
+    const cats = [...new Set(data.map(d => d.categoryId))].filter(Boolean).map(catId => {
+      const firstDish = data.find(d => d.categoryId === catId)
+      return { id: catId, title: firstDish?.categoryTitle }
+    })
     setCategories(cats)
   }
 
+  const generateId = () => {
+    return Math.random().toString(36).substring(2, 11)
+  }
+
   const addDish = () => {
-    if (!newDishName.trim() || !newCategory.trim()) {
+    if (!newDishName.trim() || !newCategoryTitle.trim()) {
       alert('请输入菜品名称和分类')
       return
     }
 
+    // 检查分类是否存在
+    let categoryId = newCategoryId
+    if (!categoryId) {
+      const existingCat = categories.find(c => c.title === newCategoryTitle.trim())
+      categoryId = existingCat ? existingCat.id : generateId()
+    }
+
     const newDish = {
-      id: Date.now(),
-      name: newDishName.trim(),
-      category: newCategory.trim()
+      id: generateId(),
+      title: newDishName.trim(),
+      categoryId: categoryId,
+      categoryTitle: newCategoryTitle.trim(),
+      can_repeated: true // 默认参与重复判断
     }
 
     const updatedDishes = [...dishes, newDish]
     setDishes(updatedDishes)
     saveDishesData(updatedDishes)
     
-    if (!categories.includes(newCategory)) {
-      setCategories([...categories, newCategory])
+    if (!categories.find(c => c.id === categoryId)) {
+      setCategories([...categories, { id: categoryId, title: newCategoryTitle.trim() }])
     }
 
     setNewDishName('')
-    setNewCategory('')
+    setNewCategoryTitle('')
+    setNewCategoryId('')
   }
 
   const deleteDish = (id) => {
@@ -72,23 +90,31 @@ const DishManager = () => {
         </div>
         <div className="form-group">
           <select
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
+            value={newCategoryId}
+            onChange={(e) => {
+              const selectedId = e.target.value
+              setNewCategoryId(selectedId)
+              if (selectedId) {
+                const cat = categories.find(c => c.id === selectedId)
+                setNewCategoryTitle(cat?.title || '')
+              }
+            }}
             className="form-select"
           >
-            <option value="">选择或输入分类</option>
+            <option value="">选择分类</option>
             {categories.map(cat => (
-              <option key={cat} value={cat}>{cat}</option>
+              <option key={cat.id} value={cat.id}>{cat.title}</option>
             ))}
           </select>
+        </div>
+        <div className="form-group">
           <input
             type="text"
-            placeholder="新分类"
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
+            placeholder="新分类名称"
+            value={newCategoryTitle}
+            onChange={(e) => setNewCategoryTitle(e.target.value)}
             onKeyPress={handleKeyPress}
             className="form-input"
-            style={{ marginTop: '8px' }}
           />
         </div>
         <button onClick={addDish} className="add-button">
@@ -105,8 +131,8 @@ const DishManager = () => {
             {dishes.map(dish => (
               <div key={dish.id} className="dish-card">
                 <div className="dish-info">
-                  <h4>{dish.name}</h4>
-                  <p className="category-label">{dish.category}</p>
+                  <h4>{dish.title}</h4>
+                  <p className="category-label">{dish.categoryTitle}</p>
                 </div>
                 <button 
                   onClick={() => deleteDish(dish.id)} 

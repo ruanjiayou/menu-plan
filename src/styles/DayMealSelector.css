@@ -68,53 +68,11 @@
   border-bottom: none;
 }
 
-.meal-title-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-  gap: 8px;
-}
-
 .meal-title {
   font-size: 14px;
   font-weight: 600;
   color: #333;
-  margin: 0;
-}
-
-.repeat-toggle {
-  padding: 4px 8px;
-  border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  background: white;
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 500;
-  color: #666;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  transition: all 0.3s ease;
-  white-space: nowrap;
-}
-
-.repeat-toggle:hover {
-  border-color: #667eea;
-  color: #667eea;
-  background-color: #f8f9ff;
-}
-
-.repeat-toggle.enabled {
-  background-color: #e8f5e9;
-  border-color: #4caf50;
-  color: #2e7d32;
-}
-
-.repeat-toggle.disabled {
-  background-color: #ffebee;
-  border-color: #f44336;
-  color: #c62828;
+  margin: 0 0 10px 0;
 }
 
 .selected-dishes-list {
@@ -125,23 +83,62 @@
   min-height: 32px;
 }
 
-.dish-tag {
+.dish-tag-wrapper {
   background-color: #e8ebff;
   color: #667eea;
-  padding: 6px 10px;
+  border: 1px solid #667eea;
+  padding: 6px 8px;
   border-radius: 16px;
   font-size: 12px;
   font-weight: 500;
   display: flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid #667eea;
+  transition: all 0.3s ease;
 }
 
-.dish-tag.repeated {
+.dish-tag-wrapper.repeated {
   background-color: #fff3cd;
   color: #856404;
   border-color: #ffc107;
+}
+
+.dish-tag-content {
+  display: flex;
+  align-items: center;
+}
+
+.dish-tag-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+}
+
+.repeat-check {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: inherit;
+  transition: opacity 0.3s ease;
+  border-radius: 3px;
+}
+
+.repeat-check:hover {
+  opacity: 0.7;
+  background-color: rgba(0, 0, 0, 0.1);
+}
+
+.repeat-check.enabled {
+  color: inherit;
+}
+
+.repeat-check.disabled {
+  color: #999;
 }
 
 .remove-btn {
@@ -149,11 +146,12 @@
   border: none;
   color: inherit;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 14px;
   padding: 0;
   display: flex;
   align-items: center;
   font-weight: bold;
+  transition: opacity 0.3s ease;
 }
 
 .remove-btn:hover {
@@ -368,15 +366,6 @@
   .day-selector-modal {
     border-radius: 12px;
     max-height: 95vh;
-  }
-
-  .repeat-toggle {
-    font-size: 10px;
-    padding: 3px 6px;
-  }
-
-  .meal-title-row {
-    flex-wrap: wrap;
   }
 
   .dish-selector-modal {

@@ -1,4 +1,148 @@
 .meal-planner {
-    background-color: #f0f0f0;
-    padding: 20px;
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.planner-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.planner-header h2 {
+  font-size: 20px;
+  color: #333;
+  flex: 1;
+  text-align: center;
+}
+
+.nav-button {
+  background: none;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  transition: all 0.3s ease;
+}
+
+.nav-button:hover {
+  background-color: #f5f5f5;
+  color: #667eea;
+}
+
+.calendar-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+  margin-bottom: 8px;
+}
+
+.weekday {
+  text-align: center;
+  font-weight: 600;
+  color: #666;
+  padding: 8px;
+  font-size: 12px;
+  background-color: #fafafa;
+}
+
+.calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.calendar-day {
+  aspect-ratio: 1;
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 8px;
+  cursor: pointer;
+  background: white;
+  transition: all 0.3s ease;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-day:hover {
+  border-color: #667eea;
+  background-color: #f8f9ff;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.calendar-day.other-month {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.calendar-day.other-month:hover {
+  border-color: #e0e0e0;
+  background-color: white;
+  box-shadow: none;
+}
+
+.day-number {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.day-meals {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.meal-badge {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-weight: 600;
+  color: white;
+}
+
+.meal-badge.lunch {
+  background-color: #ff9800;
+}
+
+.meal-badge.dinner {
+  background-color: #2196f3;
+}
+
+@media (max-width: 768px) {
+  .meal-planner {
+    padding: 12px;
+  }
+
+  .planner-header h2 {
+    font-size: 16px;
+  }
+
+  .calendar-day {
+    padding: 6px;
+  }
+
+  .day-number {
+    font-size: 12px;
+  }
+
+  .meal-badge {
+    font-size: 10px;
+    padding: 1px 4px;
+  }
 }

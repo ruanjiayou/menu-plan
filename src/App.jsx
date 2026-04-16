@@ -1,12 +1,45 @@
-import React from 'react';
-import './App.css';
+import React, { useState, useEffect } from 'react'
+import './App.css'
+import MealPlanner from './components/MealPlanner'
+import DishManager from './components/DishManager'
+import { ChefHat, Settings } from 'lucide-react'
 
-const App = () => {
-    return (
-        <div className="app">
-            <h1>Menu Planner</h1>
+function App() {
+  const [activeTab, setActiveTab] = useState('planner')
+
+  return (
+    <div className="app">
+      <header className="app-header">
+        <div className="header-content">
+          <div className="logo">
+            <ChefHat size={28} />
+            <h1>菜单规划</h1>
+          </div>
         </div>
-    );
-};
+      </header>
 
-export default App;
+      <div className="tab-navigation">
+        <button 
+          className={`tab-button ${activeTab === 'planner' ? 'active' : ''}`}
+          onClick={() => setActiveTab('planner')}
+        >
+          📅 菜单规划
+        </button>
+        <button 
+          className={`tab-button ${activeTab === 'dishes' ? 'active' : ''}`}
+          onClick={() => setActiveTab('dishes')}
+        >
+          <Settings size={18} style={{ marginRight: '4px' }} />
+          菜品管理
+        </button>
+      </div>
+
+      <main className="app-main">
+        {activeTab === 'planner' && <MealPlanner />}
+        {activeTab === 'dishes' && <DishManager />}
+      </main>
+    </div>
+  )
+}
+
+export default App

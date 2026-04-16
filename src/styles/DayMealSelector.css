@@ -344,3 +344,44 @@
     font-size: 12px;
   }
 }
+
+
+.dish-cell.repeated {
+  background-color: #fff3cd;
+  border-color: #ffc107;
+}
+
+.dish-cell-repeated {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 768px) {
+  .day-selector-overlay {
+    padding: 0;
+  }
+
+  .day-selector-modal {
+    border-radius: 12px;
+    max-height: 95vh;
+  }
+
+  .dish-selector-modal {
+    max-height: 90vh;
+  }
+
+  .dishes-grid {
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 8px;
+  }
+
+  .dish-cell {
+    padding: 10px;
+    font-size: 12px;
+  }
+}

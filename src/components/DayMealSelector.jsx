@@ -22,6 +22,7 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
   })
   
   const [currentRepeatStatus, setCurrentRepeatStatus] = useState(repeatStatus)
+  const [dishSelectorRepeatStatus, setDishSelectorRepeatStatus] = useState({}) // 菜品选择器中的重复状态
   
   const dateStr = format(date, 'yyyy-MM-dd')
   const [showDishList, setShowDishList] = useState(false)
@@ -70,6 +71,49 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
     }
 
     return status
+  }
+
+  // 计算所有菜品的重复状态（用于菜品选择器）
+  const calculateAllDishesRepeatStatus = (mealData) => {
+    const statusMap = {}
+    
+    // 遍历所有菜品，计算每个菜品的重复状态
+    dishes.forEach(dish => {
+      const dishId = dish.id
+      const enabled = getDishRepeatCheckEnabled(dateStr, dishId)
+      
+      if (enabled) {
+        let foundCount = 0
+        
+        for (let i = -7; i <= 7; i++) {
+          const checkDate = addDays(date, i)
+          const checkDateStr = format(checkDate, 'yyyy-MM-dd')
+          const checkMeals = mealData[checkDateStr] || {}
+          const checkLunch = checkMeals.lunch || []
+          const checkDinner = checkMeals.dinner || []
+
+          if (checkLunch.some(d => d.id === dishId) || checkDinner.some(d => d.id === dishId)) {
+            foundCount++
+          }
+        }
+        
+        // 出现超过1次则标记为重复
+        statusMap[dishId] = foundCount > 1
+      } else {
+        statusMap[dishId] = false
+      }
+    })
+
+    return statusMap
+  }
+
+  // 打开菜品选择器时，计算所有菜品的重复状态
+  const openDishSelector = (mealType) => {
+    setSelectedMealTypeForAdd(mealType)
+    const mealsDataForMonth = getMealData(date)
+    const allDishesStatus = calculateAllDishesRepeatStatus(mealsDataForMonth)
+    setDishSelectorRepeatStatus(allDishesStatus)
+    setShowDishList(true)
   }
 
   // 当菜品或重复设置改变时，更新15天范围内的重复状态
@@ -219,11 +263,6 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
     onRepeatStatusChange(newRepeatStatus)
   }
 
-  const openDishSelector = (mealType) => {
-    setSelectedMealTypeForAdd(mealType)
-    setShowDishList(true)
-  }
-
   return (
     <div className="day-selector-overlay" onClick={onClose}>
       <div className="day-selector-modal" onClick={(e) => e.stopPropagation()}>
@@ -338,6 +377,7 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
           categories={categories}
           dishes={dishes}
           selectedDishes={tempSelectedDishes[selectedMealTypeForAdd]}
+          dishSelectorRepeatStatus={dishSelectorRepeatStatus}
           onToggleDish={handleToggleDish}
           onClose={() => setShowDishList(false)}
         />
@@ -347,7 +387,7 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
 }
 
 // 菜品选择组件
-const DishSelectorOverlay = ({ selectedMealType, categories, dishes, selectedDishes, onToggleDish, onClose }) => {
+const DishSelectorOverlay = ({ selectedMealType, categories, dishes, selectedDishes, dishSelectorRepeatStatus, onToggleDish, onClose }) => {
   const dishsByCategory = categories.map(cat => ({
     category: cat,
     dishes: dishes.filter(d => d.categoryId === cat.id)
@@ -371,18 +411,23 @@ const DishSelectorOverlay = ({ selectedMealType, categories, dishes, selectedDis
               <div className="dishes-grid">
                 {categoryItems.map(dish => {
                   const isSelected = selectedDishes.some(d => d.id === dish.id)
+                  const isRepeated = dishSelectorRepeatStatus[dish.id]
                   
                   return (
                     <button
                       key={dish.id}
-                      className={`dish-cell ${isSelected ? 'selected' : ''}`}
+                      className={`dish-cell ${isSelected ? 'selected' : ''} ${isRepeated ? 'repeated' : ''}`}
                       onClick={() => onToggleDish(dish)}
+                      title={isRepeated ? '该菜品最近7天内有重复' : ''}
                     >
                       <span className="dish-cell-name">{dish.title}</span>
                       {isSelected && (
                         <span className="dish-cell-check">
                           <Check size={16} />
                         </span>
+                      )}
+                      {isRepeated && (
+                        <span className="dish-cell-repeated" title="重复菜品">⚠️</span>
                       )}
                     </button>
                   )

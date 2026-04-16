@@ -100,7 +100,8 @@
 .day-number {
   font-weight: 600;
   color: #333;
-  font-size: 13px;
+  font-size: 16px;
+  padding: 0 4px;
 }
 
 .meal-block {
@@ -109,13 +110,12 @@
   align-items: flex-start;
   flex-wrap: wrap;
   align-content: flex-start;
-  font-size: 10px;
+  font-size: 14px;
   /* flex: 1; */
-  min-height: 0;
 }
 
 .meal-label {
-  font-weight: 600;
+  /* font-weight: 600; */
   color: white;
   padding: 2px 4px;
   border-radius: 2px;
@@ -182,10 +182,10 @@
   }
 
   .meal-block {
-    font-size: 9px;
+    font-size: 12px;
   }
 
   .dish-tag {
-    font-size: 8px;
+    font-size: 10px;
   }
 }

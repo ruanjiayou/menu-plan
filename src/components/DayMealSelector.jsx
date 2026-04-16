@@ -1,8 +1,8 @@
-import React, { useState } from 'react'
-import { format, subDays } from 'date-fns'
+import React, { useState, useEffect } from 'react'
+import { format, subDays, addDays } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { X, Plus, Check, Eye, EyeOff } from 'lucide-react'
-import { getDishRepeatCheckEnabled, setDishRepeatCheckEnabled, getMealData } from '../utils/storage'
+import { getDishRepeatCheckEnabled, setDishRepeatCheckEnabled, getMealData, saveMealData, getStorageKey } from '../utils/storage'
 import '../styles/DayMealSelector.css'
 
 const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onClose }) => {
@@ -35,25 +35,55 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onCl
       const mealDishes = prev[selectedMealTypeForAdd] || []
       const exists = mealDishes.some(d => d.id === dishItem.id)
       
-      return {
+      const newMeals = {
         ...prev,
         [selectedMealTypeForAdd]: exists 
           ? mealDishes.filter(d => d.id !== dishItem.id)
           : [...mealDishes, dishItem]
       }
+
+      // 立即保存数据
+      saveMealData(date, newMeals)
+      
+      // 更新重复判断设置
+      if (!exists) {
+        const key = `${selectedMealTypeForAdd}_${dishItem.id}`
+        setDishRepeatSettings(prev => ({
+          ...prev,
+          [key]: getDishRepeatCheckEnabled(dateStr, dishItem.id)
+        }))
+        // 保存重复判断设置
+        setDishRepeatCheckEnabled(dateStr, dishItem.id, true)
+      }
+
+      // 回调更新父组件
+      onMealSelect(newMeals)
+      
+      return newMeals
     })
   }
 
   const handleRemoveDish = (mealType, dishId) => {
-    setTempSelectedDishes(prev => ({
-      ...prev,
-      [mealType]: prev[mealType].filter(d => d.id !== dishId)
-    }))
-    // 移除该菜品的重复判断设置
-    const key = `${mealType}_${dishId}`
-    const newSettings = { ...dishRepeatSettings }
-    delete newSettings[key]
-    setDishRepeatSettings(newSettings)
+    setTempSelectedDishes(prev => {
+      const newMeals = {
+        ...prev,
+        [mealType]: prev[mealType].filter(d => d.id !== dishId)
+      }
+      
+      // 立即保存数据
+      saveMealData(date, newMeals)
+      
+      // 移除该菜品的重复判断设置
+      const key = `${mealType}_${dishId}`
+      const newSettings = { ...dishRepeatSettings }
+      delete newSettings[key]
+      setDishRepeatSettings(newSettings)
+
+      // 回调更新父组件
+      onMealSelect(newMeals)
+      
+      return newMeals
+    })
   }
 
   const handleToggleDishRepeat = (mealType, dishId) => {
@@ -62,21 +92,8 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onCl
       ...prev,
       [key]: !prev[key]
     }))
-  }
-
-  const handleSaveAll = () => {
-    // 保存重复判断设置
-    Object.entries(dishRepeatSettings).forEach(([key, enabled]) => {
-      const [mealType, dishId] = key.split('_')
-      setDishRepeatCheckEnabled(dateStr, dishId, enabled)
-    })
-
-    // 保存菜品数据
-    onMealSelect({
-      lunch: tempSelectedDishes.lunch,
-      dinner: tempSelectedDishes.dinner
-    })
-    onClose()
+    // 保存���复判断设置
+    setDishRepeatCheckEnabled(dateStr, dishId, !dishRepeatSettings[key])
   }
 
   const openDishSelector = (mealType) => {
@@ -114,7 +131,7 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onCl
                         <button
                           className={`repeat-check ${repeatEnabled ? 'enabled' : 'disabled'}`}
                           onClick={() => handleToggleDishRepeat('lunch', dish.id)}
-                          title={repeatEnabled ? '不参与重复判断' : '参���重复判断'}
+                          title={repeatEnabled ? '不参与重复判断' : '参与重复判断'}
                         >
                           {repeatEnabled ? <Eye size={12} /> : <EyeOff size={12} />}
                         </button>
@@ -188,10 +205,7 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onCl
           </div>
         </div>
 
-        <div className="modal-footer">
-          <button onClick={onClose} className="cancel-button">取消</button>
-          <button onClick={handleSaveAll} className="save-button">保存</button>
-        </div>
+        {/* 移除模态框页脚，不要保存按钮 */}
       </div>
 
       {/* 菜品选择弹框 */}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, subDays } from 'date-fns'
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, subDays, addDays } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { getStorageKey, getMealData, saveMealData, getDishesData, getDishRepeatCheckEnabled } from '../utils/storage'
 import DayMealSelector from './DayMealSelector'
@@ -28,7 +28,7 @@ const MealPlanner = () => {
     setDishes(dishesData)
   }
 
-  // 计算重复状态
+  // 计算重复状态 - 检查前后7天（共15天）的范围
   const updateRepeatStatus = (mealsData) => {
     const status = {}
     const allDates = Object.keys(mealsData)
@@ -44,15 +44,16 @@ const MealPlanner = () => {
       const dinnerDishes = dayMeals.dinner || []
       const date = new Date(dateStr)
 
-      // 检查午餐菜品
+      // 检查午餐菜品 - 检查前后7天（共15天）
       lunchDishes.forEach(dishItem => {
         const dishId = dishItem.id
         const enabled = getDishRepeatCheckEnabled(dateStr, dishId)
         
         if (enabled) {
           let foundCount = 0
-          for (let i = 0; i <= 7; i++) {
-            const checkDate = subDays(date, i)
+          // 前7天 + 当天 + 后7天 = 共15天
+          for (let i = -7; i <= 7; i++) {
+            const checkDate = addDays(date, i)
             const checkDateStr = format(checkDate, 'yyyy-MM-dd')
             const checkMeals = mealsData[checkDateStr] || {}
             const checkLunch = checkMeals.lunch || []
@@ -62,21 +63,23 @@ const MealPlanner = () => {
               foundCount++
             }
           }
+          // 如果在15天范围内出现超过1次，则标记为重复
           status[dateStr].lunch[dishId] = foundCount > 1
         } else {
           status[dateStr].lunch[dishId] = false
         }
       })
 
-      // 检查晚餐菜品
+      // 检查晚餐菜品 - 检查前后7天（共15天）
       dinnerDishes.forEach(dishItem => {
         const dishId = dishItem.id
         const enabled = getDishRepeatCheckEnabled(dateStr, dishId)
         
         if (enabled) {
           let foundCount = 0
-          for (let i = 0; i <= 7; i++) {
-            const checkDate = subDays(date, i)
+          // 前7天 + 当天 + 后7天 = 共15天
+          for (let i = -7; i <= 7; i++) {
+            const checkDate = addDays(date, i)
             const checkDateStr = format(checkDate, 'yyyy-MM-dd')
             const checkMeals = mealsData[checkDateStr] || {}
             const checkLunch = checkMeals.lunch || []
@@ -86,6 +89,7 @@ const MealPlanner = () => {
               foundCount++
             }
           }
+          // 如果在15天范围内出现超过1次，则标记为重复
           status[dateStr].dinner[dishId] = foundCount > 1
         } else {
           status[dateStr].dinner[dishId] = false

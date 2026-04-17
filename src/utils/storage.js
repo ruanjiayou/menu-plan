@@ -1,4 +1,5 @@
 import { format } from 'date-fns'
+import shttp from './shttp'
 
 const STORAGE_PREFIX = 'meal_planner_'
 const DISHES_KEY = 'dishes'
@@ -10,7 +11,14 @@ export const getStorageKey = (date) => {
 }
 
 // 获取菜单数据
-export const getMealData = (date) => {
+export const getMealData = async (date) => {
+  const result = await shttp.get(`/api/records/${date}/dishes`);
+  if (result.success) {
+    const data = result.data.list;
+    return data;
+  } else {
+    throw ('error')
+  }
   const key = getStorageKey(date)
   const data = localStorage.getItem(key)
   return data ? JSON.parse(data) : {}

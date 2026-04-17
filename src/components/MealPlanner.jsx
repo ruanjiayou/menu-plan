@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, subDays, addDays } from 'date-fns'
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, subDays, addDays, formatDate } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { getStorageKey, getMealData, saveMealData, getDishesData, getDishRepeatCheckEnabled } from '../utils/storage'
 import DayMealSelector from './DayMealSelector'
@@ -13,14 +13,25 @@ const MealPlanner = () => {
   const [repeatStatus, setRepeatStatus] = useState({}) // 存储每个日期的重复状态
 
   useEffect(() => {
-    loadMealsData()
+    loadDateRecords()
     loadDishes()
   }, [currentDate])
 
-  const loadMealsData = () => {
-    const data = getMealData(currentDate)
+  const loadDateRecords = async () => {
+    const data = {}
+    const list = await getMealData(formatDate(currentDate, 'yyyy-MM-dd'))
+    list.forEach(v => {
+      if (!data[v.date]) {
+        data[v.date] = { lunch: [], dinner: [] }
+      }
+      data[v.date][v.type].push(v);
+    })
     setMeals(data)
     updateRepeatStatus(data)
+
+
+    console.log(data)
+    console.log(repeatStatus)
   }
 
   const loadDishes = () => {
@@ -48,7 +59,7 @@ const MealPlanner = () => {
       lunchDishes.forEach(dishItem => {
         const dishId = dishItem.id
         const enabled = getDishRepeatCheckEnabled(dateStr, dishId)
-        
+
         if (enabled) {
           let foundCount = 0
           // 前7天 + 当天 + 后7天 = 共15天
@@ -74,7 +85,7 @@ const MealPlanner = () => {
       dinnerDishes.forEach(dishItem => {
         const dishId = dishItem.id
         const enabled = getDishRepeatCheckEnabled(dateStr, dishId)
-        
+
         if (enabled) {
           let foundCount = 0
           // 前7天 + 当天 + 后7天 = 共15天
@@ -96,18 +107,17 @@ const MealPlanner = () => {
         }
       })
     })
-
     setRepeatStatus(status)
   }
 
   const handleMealSelect = (date, mealData) => {
     const dateStr = format(date, 'yyyy-MM-dd')
     const newMeals = { ...meals }
-    
+
     if (!newMeals[dateStr]) {
       newMeals[dateStr] = {}
     }
-    
+
     newMeals[dateStr] = mealData
     setMeals(newMeals)
     saveMealData(currentDate, newMeals)
@@ -160,25 +170,25 @@ const MealPlanner = () => {
             const lunch = dayMeals.lunch || []
             const dinner = dayMeals.dinner || []
             const dayRepeatStatus = repeatStatus[dateStr] || { lunch: {}, dinner: {} }
-
+            console.log(dayMeals, 'day')
             return (
-              <div 
+              <div
                 key={day.toISOString()}
                 className={`calendar-day ${!isSameMonth(day, currentDate) ? 'other-month' : ''}`}
                 onClick={() => setSelectedDay(day)}
               >
                 <div className="day-number">{format(day, 'd')}</div>
-                
+
                 {/* 午餐区块 */}
                 <div className="meal-block lunch-block">
                   <div className="meal-label">午</div>
                   <div className="meal-dishes">
-                    {lunch.map(dish => (
-                      <span 
-                        key={dish.id}
-                        className={`dish-tag ${dayRepeatStatus.lunch[dish.id] ? 'repeated' : ''}`}
+                    {lunch.map(v => (
+                      <span
+                        key={v.id}
+                        className={`dish-tag ${dayRepeatStatus.lunch[v.id] ? 'repeated' : ''}`}
                       >
-                        {dish.title}
+                        {v.dish.title}
                       </span>
                     ))}
                   </div>
@@ -189,7 +199,7 @@ const MealPlanner = () => {
                   <div className="meal-label">晚</div>
                   <div className="meal-dishes">
                     {dinner.map(dish => (
-                      <span 
+                      <span
                         key={dish.id}
                         className={`dish-tag ${dayRepeatStatus.dinner[dish.id] ? 'repeated' : ''}`}
                       >

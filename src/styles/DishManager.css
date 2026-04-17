@@ -143,13 +143,6 @@
   color: #ff5252;
 }
 
-.empty-text {
-  text-align: center;
-  color: #999;
-  padding: 40px 20px;
-  font-size: 14px;
-}
-
 @media (max-width: 1024px) {
   .dish-manager {
     grid-template-columns: 1fr;

@@ -185,6 +185,8 @@
   color: #999;
   font-size: 12px;
   padding: 8px 0;
+  text-align: center;
+  line-height: 1.33;
 }
 
 /* 菜品选择弹框样式 */

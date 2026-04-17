@@ -28,8 +28,8 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
   const [showDishList, setShowDishList] = useState(false)
   const [selectedMealTypeForAdd, setSelectedMealTypeForAdd] = useState('lunch')
 
-  const categories = [...new Set(dishes.map(d => d.categoryId))].filter(Boolean).map(catId => {
-    const firstDish = dishes.find(d => d.categoryId === catId)
+  const categories = [...new Set(dishes.map(d => d.kind_id))].filter(Boolean).map(catId => {
+    const firstDish = dishes.find(d => d.kind_id === catId)
     return { id: catId, title: firstDish?.categoryTitle }
   })
 
@@ -377,7 +377,7 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
 const DishSelectorOverlay = ({ selectedMealType, categories, dishes, selectedDishes, dishSelectorRepeatStatus, onToggleDish, onClose }) => {
   const dishsByCategory = categories.map(cat => ({
     category: cat,
-    dishes: dishes.filter(d => d.categoryId === cat.id)
+    dishes: dishes.filter(d => d.kind_id === cat.id)
   }))
 
   return (

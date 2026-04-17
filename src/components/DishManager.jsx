@@ -17,8 +17,8 @@ const DishManager = () => {
   const loadDishes = () => {
     const data = getDishesData()
     setDishes(data)
-    const cats = [...new Set(data.map(d => d.categoryId))].filter(Boolean).map(catId => {
-      const firstDish = data.find(d => d.categoryId === catId)
+    const cats = [...new Set(data.map(d => d.kind_id))].filter(Boolean).map(catId => {
+      const firstDish = data.find(d => d.kind_id === catId)
       return { id: catId, title: firstDish?.categoryTitle }
     })
     setCategories(cats)
@@ -35,16 +35,16 @@ const DishManager = () => {
     }
 
     // 检查分类是否存在
-    let categoryId = newCategoryId
-    if (!categoryId) {
+    let kind_id = newCategoryId
+    if (!kind_id) {
       const existingCat = categories.find(c => c.title === newCategoryTitle.trim())
-      categoryId = existingCat ? existingCat.id : generateId()
+      kind_id = existingCat ? existingCat.id : generateId()
     }
 
     const newDish = {
       id: generateId(),
       title: newDishName.trim(),
-      categoryId: categoryId,
+      kind_id: kind_id,
       categoryTitle: newCategoryTitle.trim(),
       can_repeated: true // 默认参与重复判断
     }
@@ -53,8 +53,8 @@ const DishManager = () => {
     setDishes(updatedDishes)
     saveDishesData(updatedDishes)
     
-    if (!categories.find(c => c.id === categoryId)) {
-      setCategories([...categories, { id: categoryId, title: newCategoryTitle.trim() }])
+    if (!categories.find(c => c.id === kind_id)) {
+      setCategories([...categories, { id: kind_id, title: newCategoryTitle.trim() }])
     }
 
     setNewDishName('')

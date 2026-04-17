@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { format, subDays, addDays } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { X, Plus, Check, Eye, EyeOff } from 'lucide-react'
-import { getDishRepeatCheckEnabled, setDishRepeatCheckEnabled, getMealData, saveMealData, getStorageKey } from '../utils/storage'
+import { getDishRepeatCheckEnabled, setDishRepeatCheckEnabled, getDateDishes, saveMealData, getStorageKey } from '../utils/storage'
 import '../styles/DayMealSelector.css'
 
 const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRepeatStatusChange, onClose }) => {
@@ -10,20 +10,20 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
     lunch: meals.lunch || [],
     dinner: meals.dinner || []
   })
-  
+
   const [dishRepeatSettings, setDishRepeatSettings] = useState(() => {
     const settings = {}
-    ;['lunch', 'dinner'].forEach(mealType => {
-      tempSelectedDishes[mealType].forEach(dish => {
-        settings[`${mealType}_${dish.id}`] = getDishRepeatCheckEnabled(format(date, 'yyyy-MM-dd'), dish.id)
+      ;['lunch', 'dinner'].forEach(mealType => {
+        tempSelectedDishes[mealType].forEach(dish => {
+          settings[`${mealType}_${dish.id}`] = getDishRepeatCheckEnabled(format(date, 'yyyy-MM-dd'), dish.id)
+        })
       })
-    })
     return settings
   })
-  
+
   const [currentRepeatStatus, setCurrentRepeatStatus] = useState(repeatStatus)
   const [dishSelectorRepeatStatus, setDishSelectorRepeatStatus] = useState({}) // 菜品选择器中的重复状态
-  
+
   const dateStr = format(date, 'yyyy-MM-dd')
   const [showDishList, setShowDishList] = useState(false)
   const [selectedMealTypeForAdd, setSelectedMealTypeForAdd] = useState('lunch')
@@ -42,7 +42,7 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
 
     // 检查这个菜品在最近15天内是否重复
     let foundDates = []
-    
+
     for (let i = -7; i <= 7; i++) {
       const checkDate = addDays(date, i)
       const checkDateStr = format(checkDate, 'yyyy-MM-dd')
@@ -76,15 +76,15 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
   // 计算所有菜品的重复状态（用于菜品选择器）
   const calculateAllDishesRepeatStatus = (mealData) => {
     const statusMap = {}
-    
+
     // 遍历所有菜品，计算每个菜品的重复状态
     dishes.forEach(dish => {
       const dishId = dish.id
       const enabled = getDishRepeatCheckEnabled(dateStr, dishId)
-      
+
       if (enabled) {
         let foundCount = 0
-        
+
         for (let i = -7; i <= 7; i++) {
           const checkDate = addDays(date, i)
           const checkDateStr = format(checkDate, 'yyyy-MM-dd')
@@ -96,7 +96,7 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
             foundCount++
           }
         }
-        
+
         // 出现超过1次则标记为重复
         statusMap[dishId] = foundCount > 1
       } else {
@@ -108,9 +108,9 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
   }
 
   // 打开菜品选择器时，计算所有菜品的重复状态
-  const openDishSelector = (mealType) => {
+  const openDishSelector = async (mealType) => {
     setSelectedMealTypeForAdd(mealType)
-    const mealsDataForMonth = getMealData(date)
+    const mealsDataForMonth = await getDateDishes(date)
     const allDishesStatus = calculateAllDishesRepeatStatus(mealsDataForMonth)
     setDishSelectorRepeatStatus(allDishesStatus)
     setShowDishList(true)
@@ -118,11 +118,11 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
 
   // 当菜品或重复设置改变时，更新15天范围内所有可能受影响的菜品的重复状态
   const updateRepeatStatusForAllDishes = (mealData) => {
-    const mealsDataForMonth = getMealData(date)
+    const mealsDataForMonth = getDateDishes(date)
     const allMealsData = { ...mealsDataForMonth, ...mealData }
-    
+
     const newRepeatStatus = { ...currentRepeatStatus }
-    
+
     // 遍历所有菜品
     dishes.forEach(dish => {
       const dishId = dish.id
@@ -132,7 +132,7 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
       for (let i = -7; i <= 7; i++) {
         const checkDate = addDays(date, i)
         const checkDateStr = format(checkDate, 'yyyy-MM-dd')
-        
+
         if (!newRepeatStatus[checkDateStr]) {
           newRepeatStatus[checkDateStr] = { lunch: {}, dinner: {} }
         }
@@ -158,10 +158,10 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
   const handleToggleDish = (dishItem) => {
     const mealDishes = tempSelectedDishes[selectedMealTypeForAdd] || []
     const exists = mealDishes.some(d => d.id === dishItem.id)
-    
+
     const newMeals = {
       ...tempSelectedDishes,
-      [selectedMealTypeForAdd]: exists 
+      [selectedMealTypeForAdd]: exists
         ? mealDishes.filter(d => d.id !== dishItem.id)
         : [...mealDishes, dishItem]
     }
@@ -171,7 +171,7 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
 
     // 立即保存数据
     saveMealData(date, newMeals)
-    
+
     // 更新重复判断设置
     if (!exists) {
       const key = `${selectedMealTypeForAdd}_${dishItem.id}`
@@ -188,7 +188,7 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
 
     // 使用新的菜单数据立即更新所有菜品在15天范围内的重复状态
     updateRepeatStatusForAllDishes(newMeals)
-    
+
     // 同时更新菜品选择器的重复状态（使用已保存的新数据）
     if (showDishList) {
       const allDishesStatus = calculateAllDishesRepeatStatus(newMeals)
@@ -201,13 +201,13 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
       ...tempSelectedDishes,
       [mealType]: tempSelectedDishes[mealType].filter(d => d.id !== dishId)
     }
-    
+
     // 立即更新本地状态
     setTempSelectedDishes(newMeals)
 
     // 立即保存数据
     saveMealData(date, newMeals)
-    
+
     // 移除该菜品的重复判断设置
     const key = `${mealType}_${dishId}`
     const newSettings = { ...dishRepeatSettings }
@@ -219,7 +219,7 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
 
     // 使用新的菜单数据立即更新所有菜品在15天范围内的重复状态
     updateRepeatStatusForAllDishes(newMeals)
-    
+
     // 同时更新菜品选择器的重复状态（使用已保存的新数据）
     if (showDishList) {
       const allDishesStatus = calculateAllDishesRepeatStatus(newMeals)
@@ -230,19 +230,19 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
   const handleToggleDishRepeat = (mealType, dishId) => {
     const key = `${mealType}_${dishId}`
     const newEnabled = !dishRepeatSettings[key]
-    
+
     setDishRepeatSettings(prev => ({
       ...prev,
       [key]: newEnabled
     }))
-    
+
     // 保存重复判断设置
     setDishRepeatCheckEnabled(dateStr, dishId, newEnabled)
 
     // 更新所有菜品在15天范围内的重��状态
-    const mealsDataForMonth = getMealData(date)
+    const mealsDataForMonth = getDateDishes(date)
     updateRepeatStatusForAllDishes(mealsDataForMonth)
-    
+
     // 同时更新菜品选择器的重复状态
     if (showDishList) {
       const allDishesStatus = calculateAllDishesRepeatStatus(mealsDataForMonth)
@@ -269,8 +269,8 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
                 tempSelectedDishes.lunch.map(dish => {
                   const key = `lunch_${dish.id}`
                   const repeatEnabled = dishRepeatSettings[key] !== false
-                  const isRepeated = currentRepeatStatus.lunch && currentRepeatStatus.lunch[dish.id]
-                  
+                  const isRepeated = currentRepeatStatus[dish.id]
+
                   return (
                     <div key={key} className={`dish-tag-wrapper ${isRepeated && repeatEnabled ? 'repeated' : ''}`}>
                       <span className="dish-tag-content">
@@ -284,7 +284,7 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
                         >
                           {repeatEnabled ? <Eye size={12} /> : <EyeOff size={12} />}
                         </button>
-                        <button 
+                        <button
                           className="remove-btn"
                           onClick={() => handleRemoveDish('lunch', dish.id)}
                           title="删除菜品"
@@ -299,7 +299,7 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
                 <p className="empty-text">未选择菜品</p>
               )}
             </div>
-            <button 
+            <button
               className="add-dish-btn"
               onClick={() => openDishSelector('lunch')}
             >
@@ -315,8 +315,8 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
                 tempSelectedDishes.dinner.map(dish => {
                   const key = `dinner_${dish.id}`
                   const repeatEnabled = dishRepeatSettings[key] !== false
-                  const isRepeated = currentRepeatStatus.dinner && currentRepeatStatus.dinner[dish.id]
-                  
+                  const isRepeated = currentRepeatStatus[dish.id]
+
                   return (
                     <div key={key} className={`dish-tag-wrapper ${isRepeated && repeatEnabled ? 'repeated' : ''}`}>
                       <span className="dish-tag-content">
@@ -330,7 +330,7 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
                         >
                           {repeatEnabled ? <Eye size={12} /> : <EyeOff size={12} />}
                         </button>
-                        <button 
+                        <button
                           className="remove-btn"
                           onClick={() => handleRemoveDish('dinner', dish.id)}
                           title="删除菜品"
@@ -345,7 +345,7 @@ const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRe
                 <p className="empty-text">未选择菜品</p>
               )}
             </div>
-            <button 
+            <button
               className="add-dish-btn"
               onClick={() => openDishSelector('dinner')}
             >
@@ -399,7 +399,7 @@ const DishSelectorOverlay = ({ selectedMealType, categories, dishes, selectedDis
                 {categoryItems.map(dish => {
                   const isSelected = selectedDishes.some(d => d.id === dish.id)
                   const isRepeated = dishSelectorRepeatStatus[dish.id]
-                  
+
                   return (
                     <button
                       key={dish.id}

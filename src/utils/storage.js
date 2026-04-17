@@ -11,7 +11,7 @@ export const getStorageKey = (date) => {
 }
 
 // 获取菜单数据
-export const getMealData = async (date) => {
+export const getDateDishes = async (date) => {
   const result = await shttp.get(`/api/records/${date}/dishes`);
   if (result.success) {
     const data = result.data.list;
@@ -19,9 +19,6 @@ export const getMealData = async (date) => {
   } else {
     throw ('error')
   }
-  const key = getStorageKey(date)
-  const data = localStorage.getItem(key)
-  return data ? JSON.parse(data) : {}
 }
 
 // 保存菜单数据

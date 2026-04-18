@@ -5,7 +5,7 @@ WORKDIR /app
 
 COPY ./server .
 # copy production dependencies and source code into final image
-RUN bun install && bun run create-model
+RUN bun install
 
 # run the app
 EXPOSE 3000/tcp

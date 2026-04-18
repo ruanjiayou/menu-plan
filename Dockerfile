@@ -5,7 +5,7 @@ WORKDIR /app
 
 COPY ./server .
 # copy production dependencies and source code into final image
-RUN bun install
+RUN BUN_IMPERSONATE_NODE_VERSION=20.19.0 bun install
 
 # run the app
 EXPOSE 3000/tcp

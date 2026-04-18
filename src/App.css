@@ -77,7 +77,6 @@
   max-width: 1200px;
   width: 100%;
   margin: 0 auto;
-  padding: 16px;
 }
 
 @media (max-width: 768px) {
@@ -87,10 +86,6 @@
 
   .logo h1 {
     font-size: 20px;
-  }
-
-  .app-main {
-    padding: 12px;
   }
 
   .tab-button {

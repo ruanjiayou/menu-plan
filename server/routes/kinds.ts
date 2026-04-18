@@ -32,8 +32,8 @@ export const kindsRoutes = new Elysia({ prefix: "/api/kinds" })
 
       const info = await db.kind.create({ data: { ...data, sn: sn + 1 } });
       return Response.success({ info })
-    } catch (error) {
-      return { success: false, error: String(error) };
+    } catch (error: any) {
+      return Response.failure(error.message)
     }
   })
 

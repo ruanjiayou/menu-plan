@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { format, subDays, addDays } from 'date-fns'
 import { zhCN } from 'date-fns/locale'
 import { X, Plus, Check, Eye, EyeOff } from 'lucide-react'
-import { getDishRepeatCheckEnabled, setDishRepeatCheckEnabled, getDateDishes, saveMealData, getStorageKey } from '../utils/storage'
+import { getDishRepeatCheckEnabled, setDishRepeatCheckEnabled, getDateDishes, saveMealData, getStorageKey } from '../api'
 import '../styles/DayMealSelector.css'
 
 const DayMealSelector = ({ date, meals, dishes, repeatStatus, onMealSelect, onRepeatStatusChange, onClose }) => {

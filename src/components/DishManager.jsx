@@ -1,76 +1,97 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Trash2, Plus } from 'lucide-react'
-import { getDishesData, saveDishesData } from '../utils/storage'
 import '../styles/DishManager.css'
+import { createDish, createKind, destryDish, destryKind, getDishes, getKinds } from '../apis'
+import { useStore } from '../contexts/store'
+import { observer, useLocalObservable } from 'mobx-react'
+import { toJS } from 'mobx'
 
-const DishManager = () => {
-  const [dishes, setDishes] = useState([])
-  const [newDishName, setNewDishName] = useState('')
-  const [newCategoryTitle, setNewCategoryTitle] = useState('')
-  const [newCategoryId, setNewCategoryId] = useState('')
-  const [categories, setCategories] = useState([])
+const DishManager = observer(() => {
+  const store = useStore()
+  const local = useLocalObservable(() => ({
+    newDishTitle: '',
+    newDishKindId: '',
+    newKindId: '',
+    newKindTitle: '',
+    setKV(k, v) {
+      this[k] = v
+    }
+  }))
 
+  const init = useCallback(async () => {
+    const kinds = await getKinds()
+    store.setKinds(kinds)
+    const dishes = await getDishes({ with: 'kind' })
+    store.setDishes(dishes)
+  })
   useEffect(() => {
-    loadDishes()
+    init()
   }, [])
 
-  const loadDishes = () => {
-    const data = getDishesData()
-    setDishes(data)
-    const cats = [...new Set(data.map(d => d.kind_id))].filter(Boolean).map(catId => {
-      const firstDish = data.find(d => d.kind_id === catId)
-      return { id: catId, title: firstDish?.categoryTitle }
-    })
-    setCategories(cats)
-  }
-
-  const generateId = () => {
-    return Math.random().toString(36).substring(2, 11)
-  }
-
-  const addDish = () => {
-    if (!newDishName.trim() || !newCategoryTitle.trim()) {
+  const addDish = async () => {
+    if (!local.newDishKindId.trim() || !local.newDishTitle.trim()) {
       alert('请输入菜品名称和分类')
       return
     }
 
-    // 检查分类是否存在
-    let kind_id = newCategoryId
-    if (!kind_id) {
-      const existingCat = categories.find(c => c.title === newCategoryTitle.trim())
-      kind_id = existingCat ? existingCat.id : generateId()
+    const data = {
+      title: local.newDishTitle.trim(),
+      kind_id: local.newDishKindId,
     }
-
-    const newDish = {
-      id: generateId(),
-      title: newDishName.trim(),
-      kind_id: kind_id,
-      categoryTitle: newCategoryTitle.trim(),
-      can_repeated: true // 默认参与重复判断
+    const result = await createDish(data)
+    if (result.success) {
+      const kind = store.kinds.find(k => k.id === data.kind_id)
+      result.data.info.kind = kind ? toJS(kind) : { title: 'None' }
+      store.addDish(result.data.info)
+      local.setKV('newDishTitle', '')
+      const inputs = document.querySelectorAll('#add-dish input')
+      inputs.forEach(o => {
+        o.value = '';
+      });
+    } else {
+      return alert('添加失败 ' + result.message)
     }
-
-    const updatedDishes = [...dishes, newDish]
-    setDishes(updatedDishes)
-    saveDishesData(updatedDishes)
-    
-    if (!categories.find(c => c.id === kind_id)) {
-      setCategories([...categories, { id: kind_id, title: newCategoryTitle.trim() }])
-    }
-
-    setNewDishName('')
-    setNewCategoryTitle('')
-    setNewCategoryId('')
   }
 
-  const deleteDish = (id) => {
-    const updatedDishes = dishes.filter(d => d.id !== id)
-    setDishes(updatedDishes)
-    saveDishesData(updatedDishes)
+  const deleteDish = async (id) => {
+    const result = await destryDish(id)
+    if (result.success) {
+      store.delDish(id)
+    } else {
+      return alert('删除失败 ' + result.message)
+    }
   }
 
-  const handleKeyPress = (e) => {
-    if (e.key === 'Enter') {
-      addDish()
+  const addKind = async () => {
+    if (!local.newKindId.trim() || !local.newKindTitle.trim()) {
+      alert('请输入分类')
+      return
+    }
+
+    const data = {
+      id: local.newKindId.trim(),
+      title: local.newKindTitle.trim(),
+    }
+    const result = await createKind(data)
+    if (result.success) {
+      store.addKind(result.data.info)
+      local.setKV('newKindId', '')
+      local.setKV('newKindTitle', '')
+      const inputs = document.querySelectorAll('#add-kind input')
+      inputs.forEach(o => {
+        o.value = '';
+      });
+    } else {
+      return alert('添加失败 ' + result.message)
+    }
+  }
+
+  const deleteKind = async (id) => {
+    const result = await destryKind(id)
+    if (result.success) {
+      store.delKind(id)
+    } else {
+      return alert('删除失败 ' + result.message)
     }
   }
 
@@ -78,64 +99,98 @@ const DishManager = () => {
     <div className="dish-manager">
       <div className="dish-form">
         <h3>添加菜品</h3>
-        <div className="form-group">
+        <div id="add-dish" className="form-group">
           <input
             type="text"
             placeholder="菜品名称"
-            value={newDishName}
-            onChange={(e) => setNewDishName(e.target.value)}
-            onKeyPress={handleKeyPress}
+            defaultValue={local.newDishTitle}
+            onChange={(e) => {
+              local.setKV('newDishTitle', e.target.value)
+            }}
             className="form-input"
           />
         </div>
         <div className="form-group">
           <select
-            value={newCategoryId}
+            defaultValue={local.newDishKindId}
             onChange={(e) => {
               const selectedId = e.target.value
-              setNewCategoryId(selectedId)
-              if (selectedId) {
-                const cat = categories.find(c => c.id === selectedId)
-                setNewCategoryTitle(cat?.title || '')
-              }
+              local.setKV('newDishKindId', selectedId)
             }}
             className="form-select"
           >
             <option value="">选择分类</option>
-            {categories.map(cat => (
-              <option key={cat.id} value={cat.id}>{cat.title}</option>
+            {store.kinds.map(kind => (
+              <option key={kind.id} value={kind.id}>{kind.title}</option>
             ))}
           </select>
-        </div>
-        <div className="form-group">
-          <input
-            type="text"
-            placeholder="新分类名称"
-            value={newCategoryTitle}
-            onChange={(e) => setNewCategoryTitle(e.target.value)}
-            onKeyPress={handleKeyPress}
-            className="form-input"
-          />
         </div>
         <button onClick={addDish} className="add-button">
           <Plus size={18} /> 添加菜品
         </button>
+
+
+        <div className="dishes-list">
+          <h3>分类列表 ({store.kinds.length})</h3>
+          {store.kinds.length === 0 ? (
+            <p className="empty-text">还没有分类，请先添加</p>
+          ) : (
+            <div className="dishes-grid">
+              {store.kinds.map(kind => (
+                <div key={kind.id} className="dish-card">
+                  <div className="dish-info">
+                    <h4>{kind.title}</h4>
+                  </div>
+                  <button
+                    onClick={() => deleteKind(kind.id)}
+                    className="delete-button"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        <div id="add-kind" className="form-group" style={{ display: 'flex', flexDirection: 'row', gap: 10 }}>
+          <input
+            type="text"
+            placeholder="新分类id"
+            value={local.newKindId}
+            onChange={(e) => {
+              local.setKV('newKindId', e.target.value)
+            }}
+            className="form-input"
+          />
+          <input
+            type="text"
+            placeholder="新分类名称"
+            value={local.newKindTitle}
+            onChange={(e) => {
+              local.setKV('newKindTitle', e.target.value)
+            }}
+            className="form-input"
+          />
+        </div>
+        <button onClick={addKind} className="add-button">
+          <Plus size={18} /> 添加分类
+        </button>
       </div>
 
       <div className="dishes-list">
-        <h3>菜品列表 ({dishes.length})</h3>
-        {dishes.length === 0 ? (
+        <h3>菜品列表 ({store.dishes.length})</h3>
+        {store.dishes.length === 0 ? (
           <p className="empty-text">还没有菜品，请先添加</p>
         ) : (
           <div className="dishes-grid">
-            {dishes.map(dish => (
+            {store.dishes.map(dish => (
               <div key={dish.id} className="dish-card">
                 <div className="dish-info">
                   <h4>{dish.title}</h4>
-                  <p className="category-label">{dish.categoryTitle}</p>
+                  <p className="category-label">{dish.kind?.title}</p>
                 </div>
-                <button 
-                  onClick={() => deleteDish(dish.id)} 
+                <button
+                  onClick={() => deleteDish(dish.id)}
                   className="delete-button"
                 >
                   <Trash2 size={18} />
@@ -147,6 +202,6 @@ const DishManager = () => {
       </div>
     </div>
   )
-}
+})
 
 export default DishManager

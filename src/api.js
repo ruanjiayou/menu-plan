@@ -1,5 +1,5 @@
 import { format } from 'date-fns'
-import shttp from './shttp'
+import shttp from './utils/shttp'
 
 const STORAGE_PREFIX = 'meal_planner_'
 const DISHES_KEY = 'dishes'
@@ -26,11 +26,24 @@ export const saveMealData = (date, data) => {
   const key = getStorageKey(date)
   localStorage.setItem(key, JSON.stringify(data))
 }
-
+export const getKindsList = async () => {
+  const result = await shttp.get(`/api/kinds`);
+  if (result.success) {
+    const data = result.data.list;
+    return data;
+  } else {
+    throw ('error')
+  }
+}
 // 获取菜品数据
-export const getDishesData = () => {
-  const data = localStorage.getItem(DISHES_KEY)
-  return data ? JSON.parse(data) : []
+export const getDishesList = async () => {
+  const result = await shttp.get(`/api/dishes`);
+  if (result.success) {
+    const data = result.data.list;
+    return data;
+  } else {
+    throw ('error')
+  }
 }
 
 // 保存菜品数据

@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, subDays, addDays, formatDate } from 'date-fns'
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, subDays, addDays, formatDate, } from 'date-fns'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import { getStorageKey, getDateDishes, saveMealData, getDishesData, getDishRepeatCheckEnabled } from '../utils/storage'
+import { getStorageKey, getDateDishes, saveMealData, getDishesList, getDishRepeatCheckEnabled } from '../api'
 import DayMealSelector from './DayMealSelector'
 import '../styles/MealPlanner.css'
-import store from '../store'
+import { useStore } from '../contexts/store'
 import { getDateRepeatedList } from '../utils'
 import { toJS } from 'mobx'
 import { Observer, useLocalObservable } from 'mobx-react'
@@ -21,6 +21,7 @@ function OneDish({ item }) {
 }
 
 const MealPlanner = () => {
+  const store = useStore()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDay, setSelectedDay] = useState(null)
 
@@ -49,10 +50,14 @@ const MealPlanner = () => {
       const offset = 42 - real_prev - end.getDate()
       const results = [];
       for (let i = 1; i <= offset; i++) {
-        results.push(format(subDays(end, i), 'dd'))
+        results.push(format(addDays(end, i), 'd'))
       }
       return results
     },
+    get todayDate() {
+      return formatDate(this.today, 'yyyy-MM-dd')
+    },
+    today: new Date(),
     currentDate: currentDate,
     setCurrentDate(d) {
       this.currentDate = d;
@@ -108,7 +113,6 @@ const MealPlanner = () => {
   const handleNextMonth = () => {
     local.setCurrentDate(addMonths(local.currentDate, 1))
   }
-  console.log(local.next_days)
   return <Observer>{() => (
     <div className="meal-planner">
       <div className="planner-header">
@@ -129,7 +133,7 @@ const MealPlanner = () => {
         </div>
         <div className="calendar-days">
           {local.prev_days.map((v, idx) => (
-            <div key={idx} className='calendar-day'>{v}</div>
+            <div key={idx} className='calendar-day outside'>{v}</div>
           ))}
           {local.daysInMonth.map(day => {
             const dateStr = format(day, 'yyyy-MM-dd')
@@ -138,12 +142,11 @@ const MealPlanner = () => {
             const dinner = dayMeals.filter(v => v.type === 'dinner')
             return (
               <div
-                key={day.toISOString()}
-                className={`calendar-day ${!isSameMonth(day, local.currentDate) ? 'other-month' : ''}`}
+                key={dateStr}
+                className={`calendar-day ${!isSameMonth(day, local.currentDate) ? 'other-month' : ''} ${dateStr === local.todayDate ? 'today' : ''}`}
                 onClick={() => setSelectedDay(day)}
               >
                 <div className="day-number">{format(day, 'd')}</div>
-
                 {/* 午餐区块 */}
                 <div className="meal-block lunch-block">
                   <div className="meal-label">午</div>
@@ -153,7 +156,6 @@ const MealPlanner = () => {
                     ))}
                   </div>
                 </div>
-
                 {/* 晚餐区块 */}
                 <div className="meal-block dinner-block">
                   <div className="meal-label">晚</div>
@@ -167,15 +169,13 @@ const MealPlanner = () => {
             )
           })}
           {local.next_days.map((v, idx) => (
-            <div key={idx} className='calendar-day'>
+            <div key={idx} className='calendar-day outside'>
               <div className='day-number'>{v}</div>
-
               {/* 午餐区块 */}
               <div className="meal-block lunch-block">
                 <div className="meal-label" style={{ opacity: 0 }}>午</div>
                 <div className="meal-dishes"></div>
               </div>
-
               {/* 晚餐区块 */}
               <div className="meal-block dinner-block">
                 <div className="meal-label" style={{ opacity: 0 }}>晚</div>

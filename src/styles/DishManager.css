@@ -22,6 +22,7 @@
 }
 
 .form-group {
+  margin-top: 12px;
   margin-bottom: 12px;
   display: flex;
   flex-direction: column;
@@ -87,7 +88,7 @@
 
 .dishes-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 12px;
 }
 
@@ -117,6 +118,55 @@
   margin-bottom: 4px;
   font-weight: 600;
 }
+
+
+.kinds-list {
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.kinds-list h3 {
+  font-size: 16px;
+  color: #333;
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.kinds-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.kind-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 6px;
+  padding: 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.kind-card:hover {
+  border-color: #667eea;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.kind-info {
+  flex: 1;
+}
+
+.kind-info h4 {
+  font-size: 14px;
+  color: #333;
+  margin-bottom: 4px;
+  font-weight: 600;
+}
+
 
 .category-label {
   font-size: 12px;

@@ -1,15 +1,11 @@
 .meal-planner {
-  background: white;
-  border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .planner-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
 }
 
 .planner-header h2 {
@@ -47,7 +43,6 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 0;
-  margin-bottom: 8px;
 }
 
 .weekday {
@@ -55,8 +50,7 @@
   font-weight: 600;
   color: #666;
   padding: 8px;
-  font-size: 12px;
-  background-color: #fafafa;
+  font-size: 16px;
 }
 
 .calendar-days {
@@ -86,6 +80,14 @@
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
 }
 
+.calendar-day.today {
+  background-color: lightgoldenrodyellow;
+}
+
+.calendar-day.outside {
+  color: lightgray;
+}
+
 .calendar-day.other-month {
   opacity: 0.4;
   cursor: default;
@@ -99,7 +101,7 @@
 
 .day-number {
   font-weight: 600;
-  color: #333;
+  /* color: #333; */
   font-size: 16px;
   padding: 0 4px;
 }
@@ -161,9 +163,11 @@
   .calendar-days {
     gap: 2px;
   }
+
   .calendar-day {
     padding: 2px;
   }
+
   .meal-planner {
     padding: 12px;
   }

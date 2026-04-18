@@ -12,11 +12,24 @@ export const dishesRoutes = new Elysia({ prefix: "/api/dishes" })
     if (query.kind_id) {
       where.kind_id = query.kind_id
     }
-    const list = await db.dish.findMany({
-      where,
-      orderBy: {},
-    })
-    return Response.success({ list })
+    try {
+      const list = await db.dish.findMany({
+        where,
+        orderBy: {},
+      })
+      if (query.with && query.with.includes('kind')) {
+        const ids = list.map(v => v.kind_id);
+        const kinds = await db.kind.findMany({ where: { id: { in: Array.from(new Set(ids)) } } })
+        list.forEach(v => {
+          // @ts-ignore
+          v.kind = kinds.find(k => k.id === v.kind_id) || {}
+        })
+      }
+      return Response.success({ list })
+    } catch (error: any) {
+      console.log(error);
+      return Response.failure(error.message)
+    }
   })
 
   // 获取单个菜品

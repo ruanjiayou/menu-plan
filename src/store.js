@@ -10,6 +10,7 @@ const Kind = types.model('Kind', {
 const Dish = types.model('Dish', {
   id: types.string,
   title: types.string,
+  kind: types.maybe(Kind)
 })
 
 const DateDish = types.model('DateDish', {
@@ -49,13 +50,37 @@ const Store = types.model('Store', {
   getDateList(date) {
     return toJS(self.monthDateDish.get(date)) || [];
   }
+})).actions(self => ({
+  setDishes(list) {
+    self.dishes = list;
+  },
+  addDish(dish) {
+    self.dishes.push(dish)
+  },
+  delDish(id) {
+    const dish = self.dishes.find(v => v.id === id)
+    if (dish) {
+      self.dishes.remove(dish)
+    }
+  }
+})).actions(self => ({
+  setKinds(list) {
+    self.kinds = list
+  },
+  addKind(kind) {
+    self.kinds.push(kind)
+  },
+  delKind(id) {
+    const kind = self.kinds.find(v => v.id === id)
+    if (kind) {
+      self.kinds.remove(kind)
+    }
+  }
 }));
 
-const store = Store.create({
+export const store = Store.create({
   app: { baseURL: 'http://localhost:3006' },
   DateDish: {},
   kinds: [],
   dishes: [],
 });
-
-export default store;

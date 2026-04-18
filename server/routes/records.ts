@@ -51,8 +51,8 @@ export const recordsRoutes = new Elysia({ prefix: "/api/records" })
       }
       const record = await db.record.create({ data })
       return Response.success({ info: record })
-    } catch (error) {
-      return { success: false, error: String(error) };
+    } catch (error: any) {
+      return Response.failure(error.message)
     }
   })
 

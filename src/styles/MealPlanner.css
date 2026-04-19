@@ -142,11 +142,11 @@
 }
 
 .dish-tag {
-  background-color: #f0f0f0;
+  background-color: #ccc;
   color: #333;
-  padding: 1px 3px;
-  border-radius: 2px;
-  font-size: 9px;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 12px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

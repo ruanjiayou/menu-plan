@@ -79,6 +79,12 @@
   margin: 0 auto;
 }
 
+.full-width {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+}
+
 @media (max-width: 768px) {
   .app-header {
     padding: 12px 0;

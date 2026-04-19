@@ -7,7 +7,7 @@ import '../styles/MealPlanner.css'
 import { useStore } from '../contexts/store'
 import { getDateRepeatedList } from '../utils'
 import { toJS } from 'mobx'
-import { Observer, useLocalObservable } from 'mobx-react'
+import { Observer, observer, useLocalObservable } from 'mobx-react'
 
 function OneDish({ item }) {
   return <Observer>{() => (
@@ -20,7 +20,7 @@ function OneDish({ item }) {
   )}</Observer>
 }
 
-const MealPlanner = () => {
+const MealPlanner = observer(() => {
   const store = useStore()
   const [currentDate, setCurrentDate] = useState(new Date())
   const [selectedDay, setSelectedDay] = useState(null)
@@ -91,21 +91,9 @@ const MealPlanner = () => {
     local.MonthDateDishes = toJS(store.monthDateDish)
   }
 
-  const handleMealSelect = (date, mealData) => {
-    // TODO: 重写
-    // const dateStr = format(date, 'yyyy-MM-dd')
-    // const newMeals = { ...meals }
-
-    // if (!newMeals[dateStr]) {
-    //   newMeals[dateStr] = {}
-    // }
-
-    // newMeals[dateStr] = mealData
-    // setMeals(newMeals)
-    // saveMealData(currentDate, newMeals)
-    // updateRepeatStatus(newMeals)
+  const onChange = () => {
+    local.MonthDateDishes = toJS(store.monthDateDish)
   }
-
   const handlePrevMonth = () => {
     local.setCurrentDate(subMonths(local.currentDate, 1))
   }
@@ -187,18 +175,14 @@ const MealPlanner = () => {
       </div>
 
       {/* TODO: 改为根据date查store */}
-      {/* {selectedDay && (
+      {selectedDay && (
         <DayMealSelector
-          date={selectedDay}
-          meals={meals[format(selectedDay, 'yyyy-MM-dd')] || {}}
-          dishes={dishes}
-          repeatStatus={repeatStatus[format(selectedDay, 'yyyy-MM-dd')] || {}}
-          onMealSelect={(mealData) => handleMealSelect(selectedDay, mealData)}
-          onRepeatStatusChange={handleRepeatStatusChange}
+          date={formatDate(selectedDay, 'yyyy-MM-dd')}
+          onChange={onChange}
           onClose={() => setSelectedDay(null)}
         />
-      )} */}
+      )}
     </div>
   )}</Observer>
-}
+})
 export default MealPlanner

@@ -18,16 +18,6 @@ const DishManager = observer(() => {
     }
   }))
 
-  const init = useCallback(async () => {
-    const kinds = await getKinds()
-    store.setKinds(kinds)
-    const dishes = await getDishes({ with: 'kind' })
-    store.setDishes(dishes)
-  })
-  useEffect(() => {
-    init()
-  }, [])
-
   const addDish = async () => {
     if (!local.newDishKindId.trim() || !local.newDishTitle.trim()) {
       alert('请输入菜品名称和分类')

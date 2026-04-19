@@ -1,12 +1,23 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import './App.css'
 import MealPlanner from './components/MealPlanner'
 import DishManager from './components/DishManager'
 import { ChefHat, Settings } from 'lucide-react'
+import { useStore } from './contexts/store'
+import { getDishes, getKinds } from './apis'
 
 function App() {
+  const store = useStore()
   const [activeTab, setActiveTab] = useState('planner')
-
+  const init = useCallback(async () => {
+    const kinds = await getKinds()
+    store.setKinds(kinds)
+    const dishes = await getDishes({ with: 'kind' })
+    store.setDishes(dishes)
+  })
+  useEffect(() => {
+    init()
+  }, [])
   return (
     <div className="app">
       <header className="app-header">
@@ -19,13 +30,13 @@ function App() {
       </header>
 
       <div className="tab-navigation">
-        <button 
+        <button
           className={`tab-button ${activeTab === 'planner' ? 'active' : ''}`}
           onClick={() => setActiveTab('planner')}
         >
           📅 菜单规划
         </button>
-        <button 
+        <button
           className={`tab-button ${activeTab === 'dishes' ? 'active' : ''}`}
           onClick={() => setActiveTab('dishes')}
         >

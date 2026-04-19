@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import { keyBy } from 'lodash'
-import { addHours } from 'date-fns'
+import { addDays, addHours, endOfDay, startOfDay, subDays } from 'date-fns'
 import db from "../prisma";
 import Response from '../utils/Response'
 import type { RecordCreateInput, RecordUpdateInput } from "../prisma/db/models";
@@ -23,7 +23,10 @@ export const recordsRoutes = new Elysia({ prefix: "/api/records" })
 
   // 获取指定日期的菜品列表
   .get("/:date/dishes", async ({ params, Response }) => {
-    const list = await db.record.findMany({ where: { date: params.date } });
+    const o = new Date(params.date)
+    const st = subDays(startOfDay(o), 7)
+    const et = addDays(endOfDay(o), 7)
+    const list = await db.record.findMany({ where: { time: { gte: st, lte: et } } });
     const ids = new Set<string>();
     list.forEach(v => ids.add(v.dish_id));
     const dishes = await db.dish.findMany({ where: { id: { in: Array.from(ids) } } })
@@ -50,6 +53,8 @@ export const recordsRoutes = new Elysia({ prefix: "/api/records" })
         return Response.failure('菜品不存在')
       }
       const record = await db.record.create({ data })
+      //@ts-ignore
+      record.dish = dish;
       return Response.success({ info: record })
     } catch (error: any) {
       return Response.failure(error.message)

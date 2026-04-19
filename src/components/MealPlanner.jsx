@@ -121,7 +121,19 @@ const MealPlanner = observer(() => {
         </div>
         <div className="calendar-days">
           {local.prev_days.map((v, idx) => (
-            <div key={idx} className='calendar-day outside'>{v}</div>
+            <div key={idx} className='calendar-day outside'>
+              <div className='day-number'>{v}</div>
+              {/* 午餐区块 */}
+              <div className="meal-block lunch-block">
+                <div className="meal-label">午</div>
+                <div className="meal-dishes"></div>
+              </div>
+              {/* 晚餐区块 */}
+              <div className="meal-block dinner-block">
+                <div className="meal-label">晚</div>
+                <div className="meal-dishes"></div>
+              </div>
+            </div>
           ))}
           {local.daysInMonth.map(day => {
             const dateStr = format(day, 'yyyy-MM-dd')
@@ -161,12 +173,12 @@ const MealPlanner = observer(() => {
               <div className='day-number'>{v}</div>
               {/* 午餐区块 */}
               <div className="meal-block lunch-block">
-                <div className="meal-label" style={{ opacity: 0 }}>午</div>
+                <div className="meal-label">午</div>
                 <div className="meal-dishes"></div>
               </div>
               {/* 晚餐区块 */}
               <div className="meal-block dinner-block">
-                <div className="meal-label" style={{ opacity: 0 }}>晚</div>
+                <div className="meal-label">晚</div>
                 <div className="meal-dishes"></div>
               </div>
             </div>
@@ -183,6 +195,6 @@ const MealPlanner = observer(() => {
         />
       )}
     </div>
-  )}</Observer>
+  )}</Observer >
 })
 export default MealPlanner

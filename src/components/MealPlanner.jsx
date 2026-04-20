@@ -8,7 +8,7 @@ import { getDateRepeatedList } from '../utils'
 import { toJS } from 'mobx'
 import { Observer, observer, useLocalObservable } from 'mobx-react'
 import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css';
+import 'swiper/swiper.css';
 
 function OneDish({ item }) {
   return <Observer>{() => (

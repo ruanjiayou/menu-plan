@@ -1,6 +1,6 @@
 import { Elysia } from "elysia";
 import { keyBy } from 'lodash'
-import { addDays, addHours, endOfDay, startOfDay, subDays } from 'date-fns'
+import { addDays, addHours, endOfDay, startOfDay, subDays, subMonths, addMonths } from 'date-fns'
 import db from "../prisma";
 import Response from '../utils/Response'
 import type { RecordCreateInput, RecordUpdateInput } from "../prisma/db/models";
@@ -24,8 +24,8 @@ export const recordsRoutes = new Elysia({ prefix: "/api/records" })
   // 获取指定日期的菜品列表
   .get("/:date/dishes", async ({ params, Response }) => {
     const o = new Date(params.date)
-    const st = subDays(startOfDay(o), 7)
-    const et = addDays(endOfDay(o), 7)
+    const st = startOfDay(subMonths(o, 1));
+    const et = endOfDay(addMonths(o, 1));
     const list = await db.record.findMany({ where: { time: { gte: st, lte: et } } });
     const ids = new Set<string>();
     list.forEach(v => ids.add(v.dish_id));

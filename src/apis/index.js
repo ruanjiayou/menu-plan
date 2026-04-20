@@ -33,7 +33,7 @@ export async function destryDish(id) {
   return await shttp.delete(`/api/dishes/${id}`);
 }
 // records
-export async function getDateRecords(date) {
+export async function getRecordsByDate(date) {
   const result = await shttp.get(`/api/records/${date}/dishes`);
   if (result.success) {
     const data = result.data.list;

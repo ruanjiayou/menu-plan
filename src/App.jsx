@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo, memo } from 'react'
 import './App.css'
 import MealPlanner from './components/MealPlanner'
 import DishManager from './components/DishManager'
 import { ChefHat, Settings } from 'lucide-react'
 import { useStore } from './contexts/store'
 import { getDishes, getKinds } from './apis'
+import { formatDate } from 'date-fns'
+import { Observer } from 'mobx-react'
 
 function App() {
   const store = useStore()
@@ -14,11 +16,12 @@ function App() {
     store.setKinds(kinds)
     const dishes = await getDishes({ with: 'kind' })
     store.setDishes(dishes)
-  })
+  });
+
   useEffect(() => {
     init()
   }, [])
-  return (
+  return <Observer>{() => (
     <div className="app">
       <header className="app-header">
         <div className="header-content">
@@ -33,8 +36,9 @@ function App() {
         <button
           className={`tab-button ${activeTab === 'planner' ? 'active' : ''}`}
           onClick={() => setActiveTab('planner')}
+          style={{ fontSize: 18 }}
         >
-          📅 菜单规划
+          {formatDate(store.currentDateTime, 'yyyy-MM')}
         </button>
         <button
           className={`tab-button ${activeTab === 'dishes' ? 'active' : ''}`}
@@ -44,13 +48,12 @@ function App() {
           菜品管理
         </button>
       </div>
-
       <main className="app-main">
         {activeTab === 'planner' && <MealPlanner />}
         {activeTab === 'dishes' && <DishManager />}
       </main>
     </div>
-  )
+  )}</Observer>
 }
 
 export default App

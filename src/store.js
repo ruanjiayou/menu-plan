@@ -1,3 +1,4 @@
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, subDays, addDays, formatDate, } from 'date-fns'
 import { toJS } from 'mobx';
 import { getSnapshot, types, cast } from 'mobx-state-tree'
 
@@ -15,7 +16,7 @@ const Dish = types.model('Dish', {
   kind: types.maybe(Kind)
 })
 
-const DateDish = types.model('DateDish', {
+const Record = types.model('Record', {
   id: types.string,
   dish_id: types.string,
   date: types.string,
@@ -27,17 +28,64 @@ const DateDish = types.model('DateDish', {
 })
 
 const Store = types.model('Store', {
-  monthDateDish: types.map(types.array(DateDish)),
+  dateRecordsMap: types.map(types.array(Record)),
   user: types.frozen({}),
   app: types.model({
     baseURL: types.string,
   }),
   kinds: types.array(Kind),
   dishes: types.array(Dish),
+  currentDateTime: types.Date
 }).views(self => ({
-
+  // 日期处理
+  get daysInMonth() {
+    const monthStart = startOfMonth(self.currentDateTime)
+    const monthEnd = endOfMonth(self.currentDateTime)
+    return eachDayOfInterval({ start: monthStart, end: monthEnd })
+  },
+  get prev_days() {
+    const start = startOfMonth(self.currentDateTime)
+    const count = start.getDay() - 1
+    const offset = count < 0 ? 7 + count : count;
+    const results = [];
+    for (let i = 1; i <= offset; i++) {
+      results.push(formatDate(subDays(start, i), 'dd'))
+    }
+    return results.reverse();
+  },
+  get next_days() {
+    const start = startOfMonth(self.currentDateTime)
+    const end = endOfMonth(self.currentDateTime);
+    const count = start.getDay() - 1
+    const real_prev = count < 0 ? 7 + count : count;
+    const offset = 42 - real_prev - end.getDate()
+    const results = [];
+    for (let i = 1; i <= offset; i++) {
+      results.push(format(addDays(end, i), 'd'))
+    }
+    return results
+  },
+  get this42day() {
+    const monthStart = startOfMonth(self.currentDateTime);
+    const start_of42 = subDays(monthStart, (monthStart.getDay() === 0 ? 7 : monthStart.getDay()) - 1);
+    const end_of42 = addDays(start_of42, 41);
+    return eachDayOfInterval({ start: start_of42, end: end_of42 })
+  },
+  get prev42day() {
+    const monthStart = startOfMonth(subMonths(self.currentDateTime, 1));
+    const start_of42 = subDays(monthStart, (monthStart.getDay() === 0 ? 7 : monthStart.getDay()) - 1);
+    const end_of42 = addDays(start_of42, 41);
+    return eachDayOfInterval({ start: start_of42, end: end_of42 })
+  },
+  get next42day() {
+    const monthStart = startOfMonth(addMonths(self.currentDateTime, 1));
+    const start_of42 = subDays(monthStart, (monthStart.getDay() === 0 ? 7 : monthStart.getDay()) - 1);
+    const end_of42 = addDays(start_of42, 41);
+    return eachDayOfInterval({ start: start_of42, end: end_of42 })
+  }
 })).actions(self => ({
-  resetDateDish(dateDishes) {
+  // 记录管理
+  resetRecordsMap(dateDishes) {
     const map = {};
     dateDishes.forEach(v => {
       if (!map[v.date]) {
@@ -45,36 +93,37 @@ const Store = types.model('Store', {
       }
       map[v.date].push(v)
     })
-    self.monthDateDish.replace(map)
+    self.dateRecordsMap.replace(map)
   },
   setDateDish(date, data) {
-    self.monthDateDish.set(date, cast(data));
+    self.dateRecordsMap.set(date, cast(data));
   },
   getDateList(date) {
-    return toJS(self.monthDateDish.get(date)) || [];
+    return toJS(self.dateRecordsMap.get(date)) || [];
   },
   addDateRecord(record) {
-    let records = self.monthDateDish.get(record.date)
+    let records = self.dateRecordsMap.get(record.date)
     console.log(record, records)
     if (!records) {
-      self.monthDateDish.set(record.date, cast([]))
-      records = self.monthDateDish.get(record.date)
+      self.dateRecordsMap.set(record.date, cast([]))
+      records = self.dateRecordsMap.get(record.date)
     }
     records.push(record)
   },
   removeDateRecord(record) {
-    const records = self.monthDateDish.get(record.date)
+    const records = self.dateRecordsMap.get(record.date)
     console.log(records)
     if (records) {
       const idx = records.findIndex(r => r.id === record.id)
       console.log(idx)
       if (idx !== -1) {
         records.splice(idx, 1)
-        self.monthDateDish.set(record.date, records)
+        self.dateRecordsMap.set(record.date, records)
       }
     }
   }
 })).actions(self => ({
+  // 菜品管理
   setDishes(list) {
     self.dishes = list;
   },
@@ -88,6 +137,7 @@ const Store = types.model('Store', {
     }
   }
 })).actions(self => ({
+  // 分类管理
   setKinds(list) {
     self.kinds = list
   },
@@ -100,6 +150,13 @@ const Store = types.model('Store', {
       self.kinds.remove(kind)
     }
   }
+})).actions(self => ({
+  addMonth() {
+    self.currentDateTime = addMonths(self.currentDateTime, 1)
+  },
+  subMonth() {
+    self.currentDateTime = subMonths(self.currentDateTime, 1)
+  }
 }));
 
 export const store = Store.create({
@@ -107,4 +164,5 @@ export const store = Store.create({
   DateDish: {},
   kinds: [],
   dishes: [],
+  currentDateTime: new Date()
 });

@@ -3,19 +3,8 @@
   flex-direction: column;
   height: 100%;
   padding: 10px 0;
-}
-
-.planner-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.planner-header h2 {
-  font-size: 20px;
-  color: #333;
-  flex: 1;
-  text-align: center;
+  overflow: hidden;
+  position: relative;
 }
 
 .nav-button {
@@ -41,6 +30,9 @@
   flex-direction: column;
   gap: 0;
   flex: 1;
+  overflow: hidden;
+  touch-action: 'none';
+  position: relative;
 }
 
 .weekdays {
@@ -61,6 +53,8 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 8px;
+  flex: 1;
+  overflow: auto;
 }
 
 .calendar-day {
@@ -75,7 +69,10 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  overflow: hidden;
+  overflow: auto;
+}
+.calendar-day::-webkit-scrollbar {
+  display: none;
 }
 
 .calendar-day:hover {
@@ -182,10 +179,6 @@
 
   .meal-planner {
     padding: 12px;
-  }
-
-  .planner-header h2 {
-    font-size: 16px;
   }
 
   .calendar-day {

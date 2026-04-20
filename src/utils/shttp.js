@@ -5,7 +5,7 @@ let isRefreshing = false;
 let requestQueue = [];
 
 const shttp = axios.create({
-  baseURL: 'http://localhost:3366',
+  baseURL: '/gw/menu-plan/',
   withCredentials: false,
   timeout: 20000,
 });

@@ -23,6 +23,6 @@ app
   .use(kindsRoutes)
   .use(dishesRoutes)
   .use(recordsRoutes)
-  .listen(3000);
+  .listen(3366);
 
-console.log("🦊 服务器运行在 http://localhost:3000");
+console.log("🦊 服务器运行在 http://localhost:3366");

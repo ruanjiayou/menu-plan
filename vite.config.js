@@ -6,6 +6,6 @@ export default defineConfig({
   base: '/menu-plan',
   plugins: [react()],
   server: {
-    port: 3006
+    port: 3060
   }
 });

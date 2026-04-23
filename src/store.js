@@ -1,9 +1,8 @@
-import { startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, subDays, addDays, formatDate, } from 'date-fns'
-import { groupBy } from 'lodash';
+import { startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, subDays, addDays, formatDate, } from 'date-fns'
 import { toJS } from 'mobx';
 import { types, cast } from 'mobx-state-tree'
 import storage from './utils/storage';
-import { getDateRepeatedList } from './utils/index'
+import { getDateRepeatedList, groupBy } from './utils/index'
 
 const Kind = types.model('Kind', {
   id: types.string,

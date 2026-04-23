@@ -18,3 +18,21 @@ export function getDateRepeatedList(date, map) {
   return Array.from(repeats);
 }
 
+export function groupBy(list, field) {
+  const map = {};
+  list.forEach(v => {
+    if (!map[v[field]]) {
+      map[v[field]] = [];
+    }
+    map[v[field]].push(v);
+  })
+  return map;
+}
+
+export function keyBy(list, field) {
+  const map = {};
+  list.forEach(v => {
+    map[v[field]] = v;
+  })
+  return map;
+}

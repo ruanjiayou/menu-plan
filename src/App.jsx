@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, memo } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import './App.css'
 import MealPlanner from './components/MealPlanner'
 import DishManager from './components/DishManager'
@@ -6,9 +6,9 @@ import { ChefHat, Settings } from 'lucide-react'
 import { useStore } from './contexts/store'
 import { getDishes, getKinds } from './apis'
 import { formatDate } from 'date-fns'
-import { Observer } from 'mobx-react'
+import { observer } from 'mobx-react-lite'
 
-function App() {
+const App = observer(() => {
   const store = useStore()
   const [activeTab, setActiveTab] = useState('planner')
   const init = useCallback(async () => {
@@ -21,7 +21,7 @@ function App() {
   useEffect(() => {
     init()
   }, [])
-  return <Observer>{() => (
+  return (
     <div className="app">
       <header className="app-header">
         <div className="header-content">
@@ -53,7 +53,6 @@ function App() {
         {activeTab === 'dishes' && <DishManager />}
       </main>
     </div>
-  )}</Observer>
-}
-
-export default App
+  )
+})
+export default App;

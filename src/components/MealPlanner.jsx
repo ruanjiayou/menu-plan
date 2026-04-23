@@ -1,25 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, subDays, addDays, formatDate, } from 'date-fns'
+import { format, isSameMonth, formatDate, } from 'date-fns'
 import { getRecordsByDate, } from '../apis'
 import DayMealSelector from './DayMealSelector'
 import '../styles/MealPlanner.css'
 import { useStore } from '../contexts/store'
 import { getDateRepeatedList } from '../utils'
 import { toJS } from 'mobx'
-import { Observer, observer, useLocalObservable } from 'mobx-react'
+import { observer } from 'mobx-react-lite'
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/swiper.css';
 
-function OneDish({ item }) {
-  return <Observer>{() => (
+const OneDish = observer(({ item }) => {
+  return (
     <span
       key={item.id}
       className={`dish-tag ${item.repeated ? 'repeated' : ''}`}
     >
       {item.dish.title}
     </span>
-  )}</Observer>
-}
+  )
+})
 
 const Grids42 = observer(({ days, setSelectedDay }) => {
   const store = useStore();
@@ -85,7 +85,7 @@ const MealPlanner = observer(() => {
   const onChange = () => {
     store.setRecordsMap(toJS(store.dateRecordsMap))
   }
-  return <Observer>{() => (
+  return (
     <div className="meal-planner">
       <div className="calendar-grid">
         <div className="weekdays">
@@ -130,6 +130,6 @@ const MealPlanner = observer(() => {
         />
       )}
     </div>
-  )}</Observer >
+  )
 })
 export default MealPlanner

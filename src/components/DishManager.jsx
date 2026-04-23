@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react'
 import { Trash2, Plus } from 'lucide-react'
 import '../styles/DishManager.css'
-import { createDish, createKind, destryDish, destryKind, getDishes, getKinds } from '../apis'
+import { createDish, createKind, destryDish, destryKind } from '../apis'
 import { useStore } from '../contexts/store'
-import { observer, useLocalObservable } from 'mobx-react'
+import { observer, useLocalObservable } from 'mobx-react-lite'
 import { toJS } from 'mobx'
 
 const DishManager = observer(() => {

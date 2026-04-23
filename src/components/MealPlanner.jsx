@@ -78,18 +78,8 @@ const MealPlanner = observer(() => {
 
   const loadDateRecords = async () => {
     store.loadLocalRecords(store.currentDateTime)
-    // // 计算本月部分数据的重复菜品
-    // const start = startOfMonth(store.currentDateTime).getDate()
-    // const end = endOfMonth(store.currentDateTime).getDate()
-    // for (let i = start; i <= end; i++) {
-    //   const date = formatDate(addDays(store.currentDateTime, i), 'yyyy-MM-dd');
-    //   const repeats = getDateRepeatedList(date, list)
-    //   const dateDishes = store.getDateRecords(date);
-    //   store.setDateRecords(date, dateDishes.map(v => {
-    //     v.repeated = repeats.includes(v.dish_id);
-    //     return v;
-    //   }))
-    // }
+    // 计算本月部分数据的重复菜品
+    // store.calc_repeat(store.currentDateTime)
   }
 
   const onChange = () => {

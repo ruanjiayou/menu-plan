@@ -48,7 +48,7 @@ const DayMealSelector = observer(({ date, onChange, onClose }) => {
   const handleToggleDish = async (dish) => {
     const record = local.todayDishes.find(d => d.dish_id === dish.id);
     if (record) {
-      store.removeDateRecord(record)
+      store.removeDateRecord(toJS(record))
       destryRecord(record.id)
     } else {
       const id = v7()
@@ -92,7 +92,7 @@ const DayMealSelector = observer(({ date, onChange, onClose }) => {
                         </button>
                         <button
                           className="remove-btn"
-                          onClick={() => handleRemoveDish(dish)}
+                          onClick={() => handleRemoveDish(toJS(dish))}
                           title="删除菜品"
                         >
                           ×
@@ -135,7 +135,7 @@ const DayMealSelector = observer(({ date, onChange, onClose }) => {
                         </button>
                         <button
                           className="remove-btn"
-                          onClick={() => handleRemoveDish(dish)}
+                          onClick={() => handleRemoveDish(toJS(dish))}
                           title="删除菜品"
                         >
                           ×
@@ -165,7 +165,7 @@ const DayMealSelector = observer(({ date, onChange, onClose }) => {
         <DishSelectorOverlay
           categories={store.kinds}
           dishes={dishes}
-          selectedDishes={local.todayDishes}
+          date={date}
           onToggleDish={handleToggleDish}
           onClose={() => local.closeDishSelector(false)}
         />
@@ -175,8 +175,9 @@ const DayMealSelector = observer(({ date, onChange, onClose }) => {
 })
 
 // 菜品选择组件
-const DishSelectorOverlay = observer(({ selectedDishes, onToggleDish, onClose }) => {
+const DishSelectorOverlay = observer(({ date, onToggleDish, onClose }) => {
   const store = useStore()
+  const selectedDishes = store.getDateRecords(date)
   const dishsByCategory = store.kinds.map(kind => {
     return {
       kind,

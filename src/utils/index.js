@@ -6,7 +6,7 @@ export function getDateRepeatedList(date, map) {
   const todayDate = new Date(date);
   for (let i = -7; i <= 7; i++) {
     const currDate = formatDate(addDays(todayDate, i), 'yyyy-MM-dd')
-    const ids = (map[currDate] || []).map(v => v.dish_id);
+    const ids = (map.get(currDate) || []).map(v => v.dish_id);
     ids.map(id => {
       if (dish_ids.has(id)) {
         repeats.add(id);

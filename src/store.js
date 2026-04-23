@@ -1,8 +1,9 @@
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, subDays, addDays, formatDate, } from 'date-fns'
+import { startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, subDays, addDays, formatDate, } from 'date-fns'
 import { groupBy } from 'lodash';
 import { toJS } from 'mobx';
-import { getSnapshot, types, cast } from 'mobx-state-tree'
+import { types, cast } from 'mobx-state-tree'
 import storage from './utils/storage';
+import { getDateRepeatedList } from './utils/index'
 
 const Kind = types.model('Kind', {
   id: types.string,
@@ -98,20 +99,41 @@ const Store = types.model('Store', {
         self.dateRecordsMap.set(record.date, cast([]))
         records = self.dateRecordsMap.get(record.date)
       }
+      const arr = toJS(records);
+      arr.push(record)
       records.push(cast(record))
-      storage.setValue(record.date, JSON.stringify(toJS(records)))
+      storage.setValue(record.date, JSON.stringify(arr))
     },
     removeDateRecord(record) {
       const records = self.dateRecordsMap.get(record.date)
       if (records) {
-        const idx = records.findIndex(r => r.id === record.id)
+        const arr = toJS(records)
+        const idx = arr.findIndex(r => r.id === record.id)
         if (idx !== -1) {
           records.splice(idx, 1)
+          arr.splice(idx, 1)
         }
-        storage.setValue(record.date, JSON.stringify(toJS(records)))
+        storage.setValue(record.date, JSON.stringify(arr))
       }
     }
-  })).actions(self => ({ // 菜品管理
+  }))
+  .actions(self => ({
+    calc_repeat(datetime) {
+      const start = startOfMonth(datetime).getDate()
+      const end = endOfMonth(datetime).getDate()
+      for (let i = start; i <= end; i++) {
+        const date = formatDate(addDays(datetime, i), 'yyyy-MM-dd');
+        const repeats = getDateRepeatedList(date, self.dateRecordsMap)
+        const records = self.dateRecordsMap.get(date);
+        if (records) {
+          records.forEach(record => {
+            record.repeated = repeats.includes(record.dish_id)
+          })
+        }
+      }
+    }
+  }))
+  .actions(self => ({ // 菜品管理
     setDishes(list) {
       self.dishes = list;
     },
@@ -124,7 +146,8 @@ const Store = types.model('Store', {
         self.dishes.remove(dish)
       }
     }
-  })).actions(self => ({ // 分类管理
+  }))
+  .actions(self => ({ // 分类管理
     setKinds(list) {
       self.kinds = list
     },
@@ -137,7 +160,8 @@ const Store = types.model('Store', {
         self.kinds.remove(kind)
       }
     }
-  })).actions(self => ({
+  }))
+  .actions(self => ({ // 月份切换
     addMonth() {
       self.currentDateTime = addMonths(self.currentDateTime, 1)
     },

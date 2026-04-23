@@ -1,6 +1,8 @@
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths, subDays, addDays, formatDate, } from 'date-fns'
+import { groupBy } from 'lodash';
 import { toJS } from 'mobx';
 import { getSnapshot, types, cast } from 'mobx-state-tree'
+import storage from './utils/storage';
 
 const Kind = types.model('Kind', {
   id: types.string,
@@ -43,28 +45,6 @@ const Store = types.model('Store', {
     const monthEnd = endOfMonth(self.currentDateTime)
     return eachDayOfInterval({ start: monthStart, end: monthEnd })
   },
-  get prev_days() {
-    const start = startOfMonth(self.currentDateTime)
-    const count = start.getDay() - 1
-    const offset = count < 0 ? 7 + count : count;
-    const results = [];
-    for (let i = 1; i <= offset; i++) {
-      results.push(formatDate(subDays(start, i), 'dd'))
-    }
-    return results.reverse();
-  },
-  get next_days() {
-    const start = startOfMonth(self.currentDateTime)
-    const end = endOfMonth(self.currentDateTime);
-    const count = start.getDay() - 1
-    const real_prev = count < 0 ? 7 + count : count;
-    const offset = 42 - real_prev - end.getDate()
-    const results = [];
-    for (let i = 1; i <= offset; i++) {
-      results.push(format(addDays(end, i), 'd'))
-    }
-    return results
-  },
   get this42day() {
     const monthStart = startOfMonth(self.currentDateTime);
     const start_of42 = subDays(monthStart, (monthStart.getDay() === 0 ? 7 : monthStart.getDay()) - 1);
@@ -83,85 +63,92 @@ const Store = types.model('Store', {
     const end_of42 = addDays(start_of42, 41);
     return eachDayOfInterval({ start: start_of42, end: end_of42 })
   }
-})).actions(self => ({
-  // 记录管理
-  resetRecordsMap(dateDishes) {
-    const map = {};
-    dateDishes.forEach(v => {
-      if (!map[v.date]) {
-        map[v.date] = []
+}))
+  .actions(self => ({// 从本地操作    
+    loadLocalRecords(datetime) {
+      const start = startOfMonth(subMonths(datetime, 1));
+      const end = endOfMonth(addMonths(datetime, 1))
+      const arr = eachDayOfInterval(start, end);
+      for (let i = 0; i < arr.length; i++) {
+        const date = formatDate(arr[i], 'yyyy-MM-dd')
+        const value = storage.getValue(date)
+        self.dateRecordsMap.set(date, value ? JSON.parse(value) : [])
       }
-      map[v.date].push(v)
-    })
-    self.dateRecordsMap.replace(map)
-  },
-  setDateDish(date, data) {
-    self.dateRecordsMap.set(date, cast(data));
-  },
-  getDateList(date) {
-    return toJS(self.dateRecordsMap.get(date)) || [];
-  },
-  addDateRecord(record) {
-    let records = self.dateRecordsMap.get(record.date)
-    console.log(record, records)
-    if (!records) {
-      self.dateRecordsMap.set(record.date, cast([]))
-      records = self.dateRecordsMap.get(record.date)
-    }
-    records.push(record)
-  },
-  removeDateRecord(record) {
-    const records = self.dateRecordsMap.get(record.date)
-    console.log(records)
-    if (records) {
-      const idx = records.findIndex(r => r.id === record.id)
-      console.log(idx)
-      if (idx !== -1) {
-        records.splice(idx, 1)
-        self.dateRecordsMap.set(record.date, records)
+    },
+  }))
+  .actions(self => ({ // 记录管理
+    setRecordsMap(dateDishes) {
+      const map = groupBy(dateDishes, 'date');
+      Object.keys(map).forEach(date => {
+        storage.setValue(date, JSON.stringify(map[date]))
+        self.dateRecordsMap.set(date, map[date]);
+      });
+    },
+    // 更新某天数据
+    setDateRecords(date, data) {
+      storage.setValue(date, JSON.stringify(data))
+      self.dateRecordsMap.set(date, cast(data));
+    },
+    getDateRecords(date) {
+      return self.dateRecordsMap.get(date) || [];
+    },
+    addDateRecord(record) {
+      let records = self.dateRecordsMap.get(record.date)
+      if (!records) {
+        self.dateRecordsMap.set(record.date, cast([]))
+        records = self.dateRecordsMap.get(record.date)
+      }
+      records.push(cast(record))
+      storage.setValue(record.date, JSON.stringify(toJS(records)))
+    },
+    removeDateRecord(record) {
+      const records = self.dateRecordsMap.get(record.date)
+      if (records) {
+        const idx = records.findIndex(r => r.id === record.id)
+        if (idx !== -1) {
+          records.splice(idx, 1)
+        }
+        storage.setValue(record.date, JSON.stringify(toJS(records)))
       }
     }
-  }
-})).actions(self => ({
-  // 菜品管理
-  setDishes(list) {
-    self.dishes = list;
-  },
-  addDish(dish) {
-    self.dishes.push(dish)
-  },
-  delDish(id) {
-    const dish = self.dishes.find(v => v.id === id)
-    if (dish) {
-      self.dishes.remove(dish)
+  })).actions(self => ({ // 菜品管理
+    setDishes(list) {
+      self.dishes = list;
+    },
+    addDish(dish) {
+      self.dishes.push(dish)
+    },
+    delDish(id) {
+      const dish = self.dishes.find(v => v.id === id)
+      if (dish) {
+        self.dishes.remove(dish)
+      }
     }
-  }
-})).actions(self => ({
-  // 分类管理
-  setKinds(list) {
-    self.kinds = list
-  },
-  addKind(kind) {
-    self.kinds.push(kind)
-  },
-  delKind(id) {
-    const kind = self.kinds.find(v => v.id === id)
-    if (kind) {
-      self.kinds.remove(kind)
+  })).actions(self => ({ // 分类管理
+    setKinds(list) {
+      self.kinds = list
+    },
+    addKind(kind) {
+      self.kinds.push(kind)
+    },
+    delKind(id) {
+      const kind = self.kinds.find(v => v.id === id)
+      if (kind) {
+        self.kinds.remove(kind)
+      }
     }
-  }
-})).actions(self => ({
-  addMonth() {
-    self.currentDateTime = addMonths(self.currentDateTime, 1)
-  },
-  subMonth() {
-    self.currentDateTime = subMonths(self.currentDateTime, 1)
-  }
-}));
+  })).actions(self => ({
+    addMonth() {
+      self.currentDateTime = addMonths(self.currentDateTime, 1)
+    },
+    subMonth() {
+      self.currentDateTime = subMonths(self.currentDateTime, 1)
+    }
+  }));
 
 export const store = Store.create({
   app: { baseURL: 'http://localhost:3006' },
-  DateDish: {},
+  dateRecordsMap: {},
   kinds: [],
   dishes: [],
   currentDateTime: new Date()

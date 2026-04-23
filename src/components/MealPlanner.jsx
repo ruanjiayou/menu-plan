@@ -68,31 +68,32 @@ const MealPlanner = observer(() => {
   const swiperRef = useRef(null);
 
   useEffect(() => {
-    store.resetRecordsMap([])
     loadDateRecords()
+    const date = formatDate(store.currentDateTime, 'yyyy-MM-dd')
+    // 获取本月所需数据(本月+前后7天)
+    getRecordsByDate(date).then(list => {
+      store.setRecordsMap(list)
+    })
   }, [store.currentDateTime])
 
   const loadDateRecords = async () => {
-    const date = formatDate(store.currentDateTime, 'yyyy-MM-dd')
-    // 获取本月所需数据(本月+前后7天)
-    const list = await getRecordsByDate(date)
-    store.resetRecordsMap(list)
-    // 计算本月部分数据的重复菜品
-    const start = startOfMonth(store.currentDateTime).getDate()
-    const end = endOfMonth(store.currentDateTime).getDate()
-    for (let i = start; i <= end; i++) {
-      const date = formatDate(addDays(store.currentDateTime, i), 'yyyy-MM-dd');
-      const repeats = getDateRepeatedList(date, list)
-      const dateDishes = store.getDateList(date);
-      store.setDateDish(date, dateDishes.map(v => {
-        v.repeated = repeats.includes(v.dish_id);
-        return v;
-      }))
-    }
+    store.loadLocalRecords(store.currentDateTime)
+    // // 计算本月部分数据的重复菜品
+    // const start = startOfMonth(store.currentDateTime).getDate()
+    // const end = endOfMonth(store.currentDateTime).getDate()
+    // for (let i = start; i <= end; i++) {
+    //   const date = formatDate(addDays(store.currentDateTime, i), 'yyyy-MM-dd');
+    //   const repeats = getDateRepeatedList(date, list)
+    //   const dateDishes = store.getDateRecords(date);
+    //   store.setDateRecords(date, dateDishes.map(v => {
+    //     v.repeated = repeats.includes(v.dish_id);
+    //     return v;
+    //   }))
+    // }
   }
 
   const onChange = () => {
-    store.resetRecordsMap(toJS(store.dateRecordsMap))
+    store.setRecordsMap(toJS(store.dateRecordsMap))
   }
   return <Observer>{() => (
     <div className="meal-planner">

@@ -5,34 +5,22 @@ import { useStore } from '../contexts/store'
 import { store } from '../store'
 import { observer, useLocalObservable } from 'mobx-react'
 import { createRecord, destryRecord } from '../apis'
+import { v7 } from 'uuid'
+import { toJS } from 'mobx'
 
 const DayMealSelector = observer(({ date, onChange, onClose }) => {
   const dishes = store.dishes;
   const local = useLocalObservable(() => ({
     showDishList: false,
     type: '',
-    todayDishes: [],
+    get todayDishes() {
+      return store.getDateRecords(date)
+    },
     get lunch() {
       return this.todayDishes.filter(d => d.type === 'lunch')
     },
     get dinner() {
       return this.todayDishes.filter(d => d.type === 'dinner')
-    },
-    setTodayDishes(data) {
-      this.todayDishes = data;
-    },
-    addRecord(record) {
-      this.todayDishes.push(record)
-      store.addDateRecord(record)
-      onChange()
-    },
-    removeRecord(id) {
-      const idx = this.todayDishes.findIndex(d => d.id === id)
-      if (idx !== -1) {
-        store.removeDateRecord(this.todayDishes[idx])
-        this.todayDishes.splice(idx, 1)
-        onChange()
-      }
     },
     toggleDishRepeat(id) {
       const item = this.todayDishes.find(d => d.id === id)
@@ -49,28 +37,24 @@ const DayMealSelector = observer(({ date, onChange, onClose }) => {
       local.type = '';
     }
   }))
-  useEffect(() => {
-    const dishes = store.getDateList(date)
-    local.setTodayDishes(dishes)
-  }, [])
-
-  const handleRemoveDish = async (id) => {
-    await destryRecord(id)
-    local.removeRecord(id)
+  const handleRemoveDish = async (record) => {
+    store.removeDateRecord(record)
+    destryRecord(record.id)
   }
 
   const handleToggleDishRepeat = (id) => {
     local.toggleDishRepeat(id)
   }
-  const handleToggleDish = async (dish_id, post_or_delete) => {
-    const record = local.todayDishes.find(d => d.dish_id === dish_id);
-    console.log(post_or_delete, dish_id, record)
+  const handleToggleDish = async (dish) => {
+    const record = local.todayDishes.find(d => d.dish_id === dish.id);
     if (record) {
-      await destryRecord(record.id)
-      local.removeRecord(record.id)
+      store.removeDateRecord(record)
+      destryRecord(record.id)
     } else {
-      const result = await createRecord({ dish_id, date, type: local.type })
-      local.addRecord(result.data.info)
+      const id = v7()
+      const data = { id, dish_id: dish.id, date, type: local.type, can_repeated: 0, sn: 1, time: new Date() }
+      store.addDateRecord({ ...data, dish })
+      createRecord(data)
     }
   }
   return (
@@ -108,7 +92,7 @@ const DayMealSelector = observer(({ date, onChange, onClose }) => {
                         </button>
                         <button
                           className="remove-btn"
-                          onClick={() => handleRemoveDish(dish.id)}
+                          onClick={() => handleRemoveDish(dish)}
                           title="删除菜品"
                         >
                           ×
@@ -151,7 +135,7 @@ const DayMealSelector = observer(({ date, onChange, onClose }) => {
                         </button>
                         <button
                           className="remove-btn"
-                          onClick={() => handleRemoveDish(dish.id)}
+                          onClick={() => handleRemoveDish(dish)}
                           title="删除菜品"
                         >
                           ×
@@ -222,7 +206,7 @@ const DishSelectorOverlay = observer(({ selectedDishes, onToggleDish, onClose })
                     <button
                       key={dish.id}
                       className={`dish-cell ${isSelected ? 'selected' : ''} ${isRepeated ? 'repeated' : ''}`}
-                      onClick={() => onToggleDish(dish.id, !isSelected)}
+                      onClick={() => onToggleDish(toJS(dish), !isSelected)}
                       title={isRepeated ? '该菜品最近7天内有重复' : ''}
                     >
                       <span className="dish-cell-name">{dish.title}</span>

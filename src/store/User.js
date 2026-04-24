@@ -1,7 +1,7 @@
 import { types } from 'mobx-state-tree'
 
 export const User = types.model('User', {
-  profile: types.maybeNull(types.model('Profile', {
+  profile: types.maybe(types.model('Profile', {
     id: types.string,
     name: types.string,
     avatar: types.string,

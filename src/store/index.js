@@ -150,7 +150,7 @@ const Store = types.model('Store', {
 
 export default Store.create({
   app: App.create({ baseURL: '' }),
-  user: User.create({ profile: null }),
+  user: User.create({}),
   kinds: [],
   dishes: [],
   currentDateTime: new Date(),

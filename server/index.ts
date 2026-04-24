@@ -13,6 +13,10 @@ app.use(cors({
   preflight: true         // 关键：启用预检请求处理
 }));
 app
+  .onBeforeHandle(({ set }) => {
+    // 处理pwa进行缓存报错的问题
+    set.headers['vary'] = 'Accept-Encoding'
+  })
   // 健康检查
   .get("/", () => ({
     success: true,

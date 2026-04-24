@@ -19,6 +19,7 @@
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+  padding: 0 10px;
 }
 
 .logo {
@@ -74,12 +75,14 @@
   max-width: 1200px;
   width: 100%;
   margin: 0 auto;
+  overflow: hidden;
 }
 
 .full-width {
   display: flex;
   flex-direction: row;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 @media (max-width: 768px) {

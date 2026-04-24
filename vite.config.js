@@ -18,9 +18,9 @@ export default defineConfig(({ command, mode }) => {
     display: "fullscreen",
     icons: [
       {
-        "src": "logo.png",
+        "src": "logo.svg",
         "sizes": "64x64 32x32 24x24 16x16 192x192 512x512",
-        "type": "image/png"
+        "type": "image/svg"
       }
     ],
   };
@@ -54,7 +54,9 @@ export default defineConfig(({ command, mode }) => {
       outDir: 'menu-plan',
     },
     server: {
+      host: true,
       port: 3060,
+      allowedHosts: ['max.local'],
       proxy: {
         '/gw/menu-plan': {
           target: 'http://jiayou.work', // 后端接口地址

@@ -6,7 +6,7 @@ import { recordsRoutes } from "./routes/records";
 
 const app = new Elysia()
 app.use(cors({
-  origin: '*',           // 允许所有来源
+  origin: true,           // 允许所有来源
   credentials: false,      // 允许携带凭证
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
   allowedHeaders: ["Content-Type", "Authorization"],

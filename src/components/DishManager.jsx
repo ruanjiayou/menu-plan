@@ -100,19 +100,18 @@ const DishManager = observer(() => {
           />
         </div>
         <div className="form-group">
-          <select
-            defaultValue={local.newDishKindId}
-            onChange={(e) => {
-              const selectedId = e.target.value
-              local.setKV('newDishKindId', selectedId)
-            }}
-            className="form-select"
-          >
-            <option value="">选择分类</option>
+          <div className='full-width'>
             {store.kinds.map(kind => (
-              <option key={kind.id} value={kind.id}>{kind.title}</option>
+              <div key={kind.id} style={{ whiteSpace: 'nowrap' }} onTouchStart={() => {
+                local.setKV('newDishKindId', kind.id)
+              }} onClick={() => {
+                local.setKV('newDishKindId', kind.id)
+              }}>
+                <input type="radio" name="newKindId" value={kind.id} checked={local.newDishKindId === kind.id} />
+                {kind.title}
+              </div>
             ))}
-          </select>
+          </div>
         </div>
         <button onClick={addDish} className="add-button">
           <Plus size={18} /> 添加菜品
@@ -146,6 +145,7 @@ const DishManager = observer(() => {
             type="text"
             placeholder="新分类id"
             value={local.newKindId}
+            style={{ flex: 1 }}
             onChange={(e) => {
               local.setKV('newKindId', e.target.value)
             }}
@@ -155,6 +155,7 @@ const DishManager = observer(() => {
             type="text"
             placeholder="新分类名称"
             value={local.newKindTitle}
+            style={{ flex: 1 }}
             onChange={(e) => {
               local.setKV('newKindTitle', e.target.value)
             }}

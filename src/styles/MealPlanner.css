@@ -39,6 +39,7 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 0;
+  line-height: 18px;
 }
 
 .weekday {

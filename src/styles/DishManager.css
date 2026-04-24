@@ -214,11 +214,14 @@
 @media (max-width: 768px) {
   .dish-manager {
     gap: 12px;
+    display: block;
+    overflow: auto;
   }
 
   .dish-form,
   .dishes-list {
     padding: 12px;
+    height: auto;
   }
 
   .dishes-grid {

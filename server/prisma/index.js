@@ -1,4 +1,4 @@
-import { PrismaClient } from "./db/client";
+import { PrismaClient } from "./generated/client";
 import { PrismaLibSql } from "@prisma/adapter-libsql";
 import { config } from "dotenv"
 

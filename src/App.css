@@ -19,7 +19,7 @@
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
-  padding: 0 10px;
+  padding: 0 20px;
 }
 
 .logo {
@@ -83,6 +83,14 @@
   flex-direction: row;
   gap: 10px;
   flex-wrap: wrap;
+  align-items: center;
+}
+
+.align-aside {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
 }
 
 @media (max-width: 768px) {

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import './App.css'
 import MealPlanner from './components/MealPlanner'
 import DishManager from './components/DishManager'
-import { ChefHat, Settings } from 'lucide-react'
+import { ChefHat, Settings, UserRound } from 'lucide-react'
 import { useStore } from './contexts/store'
 import { getDishes, getKinds } from './apis'
 import { formatDate } from 'date-fns'
@@ -24,10 +24,17 @@ const App = observer(() => {
   return (
     <div className="app">
       <header className="app-header">
-        <div className="header-content">
+        <div className="header-content align-aside">
           <div className="logo">
-            <ChefHat size={28} />
-            <h1>菜单规划</h1>
+            <img src="/menu-plan/logo.png" style={{ width: 50 }} />
+            <h1>吃什么</h1>
+          </div>
+          <div className='user'>
+            {store.user.isLogin
+              ? <div className='full-width'>
+                <UserRound size={40} />
+              </div>
+              : <div style={{ padding: '3px 10px', cursor: 'pointer', color: 'white', backgroundColor: '#999' }}>登录</div>}
           </div>
         </div>
       </header>

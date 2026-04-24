@@ -107,7 +107,7 @@ const DishManager = observer(() => {
               }} onClick={() => {
                 local.setKV('newDishKindId', kind.id)
               }}>
-                <input type="radio" name="newKindId" value={kind.id} checked={local.newDishKindId === kind.id} />
+                <input type="radio" readOnly name="newKindId" value={kind.id} checked={local.newDishKindId === kind.id} />
                 {kind.title}
               </div>
             ))}

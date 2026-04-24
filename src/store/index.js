@@ -1,43 +1,22 @@
 import { startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, subDays, addDays, formatDate, } from 'date-fns'
 import { toJS } from 'mobx';
 import { types, cast } from 'mobx-state-tree'
-import storage from './utils/storage';
-import { getDateRepeatedList, groupBy } from './utils/index'
+import storage from '../utils/storage';
+import { getDateRepeatedList, groupBy } from '../utils/index'
 
-const Kind = types.model('Kind', {
-  id: types.string,
-  title: types.string,
-  sn: types.number,
-})
-
-const Dish = types.model('Dish', {
-  id: types.string,
-  title: types.string,
-  kind_id: types.string,
-  sn: types.number,
-  kind: types.maybe(Kind)
-})
-
-const Record = types.model('Record', {
-  id: types.string,
-  dish_id: types.string,
-  date: types.string,
-  can_repeated: types.number,
-  sn: types.number,
-  type: types.string,
-  dish: types.maybe(Dish),
-  repeated: types.optional(types.boolean, false)
-})
+import { App } from './App';
+import { User } from './User';
+import { Kind } from './Kind';
+import { Dish } from './Dish';
+import { Record } from './Record';
 
 const Store = types.model('Store', {
-  dateRecordsMap: types.map(types.array(Record)),
-  user: types.frozen({}),
-  app: types.model({
-    baseURL: types.string,
-  }),
+  app: App,
+  user: User,
   kinds: types.array(Kind),
   dishes: types.array(Dish),
-  currentDateTime: types.Date
+  currentDateTime: types.Date,
+  dateRecordsMap: types.map(types.array(Record)),
 }).views(self => ({
   // 日期处理
   get daysInMonth() {
@@ -169,10 +148,11 @@ const Store = types.model('Store', {
     }
   }));
 
-export const store = Store.create({
-  app: { baseURL: 'http://localhost:3006' },
-  dateRecordsMap: {},
+export default Store.create({
+  app: App.create({ baseURL: '' }),
+  user: User.create({ profile: null }),
   kinds: [],
   dishes: [],
-  currentDateTime: new Date()
+  currentDateTime: new Date(),
+  dateRecordsMap: {},
 });

@@ -1,7 +1,7 @@
 import { X, Plus, Check, Eye, EyeOff } from 'lucide-react'
 import '../styles/DayMealSelector.css'
 import { useStore } from '../contexts/store'
-import { store } from '../store'
+import store from '../store'
 import { observer, useLocalObservable } from 'mobx-react-lite'
 import { createRecord, destryRecord } from '../apis'
 import { v7 } from 'uuid'

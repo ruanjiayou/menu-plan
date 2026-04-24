@@ -24,11 +24,30 @@ registerRoute(
   })
 );
 
+const stripVaryHeaderPlugin = {
+  // 在响应存入缓存前调用
+  cacheWillUpdate: async ({ response }) => {
+    if (response && response.headers.get('Vary') === '*') {
+      const newHeaders = new Headers(response.headers);
+      newHeaders.delete('Vary');
+
+      // 返回一个全新的响应副本供缓存使用
+      return new Response(response.body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: newHeaders
+      });
+    }
+    return response;
+  }
+};
+
 // 🌐 缓存 API 接口
 registerRoute(
   ({ url }) => url.pathname.startsWith('/gw/menu-plan'),
   new StaleWhileRevalidate({
     cacheName: 'api-cache',
     networkTimeoutSeconds: 3,
+    plugins: [stripVaryHeaderPlugin]
   })
 );

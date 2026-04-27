@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import svgr from 'vite-plugin-svgr';
 import { visualizer } from 'rollup-plugin-visualizer';
 
 export default defineConfig(({ command, mode }) => {
@@ -28,6 +29,7 @@ export default defineConfig(({ command, mode }) => {
     base: env.APP_SCOPE,
     plugins: [
       react(),
+      svgr(),
       VitePWA({
         registerType: 'autoUpdate',
         manifest,
@@ -56,7 +58,7 @@ export default defineConfig(({ command, mode }) => {
     server: {
       host: true,
       port: 3060,
-      allowedHosts: ['max.local'],
+      allowedHosts: ['max.local', 'jiayou.work'],
       proxy: {
         '/gw/menu-plan': {
           target: 'http://jiayou.work', // 后端接口地址

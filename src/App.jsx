@@ -2,16 +2,33 @@ import React, { useState, useEffect, useCallback } from 'react'
 import './App.css'
 import MealPlanner from './components/MealPlanner'
 import DishManager from './components/DishManager'
-import { ChefHat, Settings, UserRound } from 'lucide-react'
+import { ChefHat } from 'lucide-react'
 import { useStore } from './contexts/store'
-import { getDishes, getKinds } from './apis'
+import { getAccessToken, getDishes, getKinds, getProfile } from './apis'
 import { formatDate } from 'date-fns'
 import { observer } from 'mobx-react-lite'
+import UserStatus from './components/UserStatus'
 
 const App = observer(() => {
   const store = useStore()
   const [activeTab, setActiveTab] = useState('planner')
   const init = useCallback(async () => {
+    if (store.user.refresh_token && !store.user.access_token) {
+      try {
+        const tokens = await getAccessToken(store.user.refresh_token)
+        if (tokens) {
+          store.user.setAccessToken(tokens.access_token)
+          store.user.setRefreshToken(tokens.refresh_token)
+        }
+      } catch (e) {
+
+      }
+    }
+    if (store.user.access_token && !store.user.profile) {
+      const result = await getProfile();
+      store.user.setProfile(result.item)
+    }
+
     const kinds = await getKinds()
     store.setKinds(kinds)
     const dishes = await getDishes({ with: 'kind' })
@@ -19,6 +36,12 @@ const App = observer(() => {
   });
 
   useEffect(() => {
+    const search = new URLSearchParams(window.location.search)
+    const refresh_token = search.get('refresh_token')
+    if (refresh_token) {
+      store.user.setRefreshToken(refresh_token)
+      window.location.replace(window.location.origin + window.location.pathname)
+    }
     init()
   }, [])
   return (
@@ -26,16 +49,10 @@ const App = observer(() => {
       <header className="app-header">
         <div className="header-content align-aside">
           <div className="logo">
-            <img src="/menu-plan/logo.png" style={{ width: 50 }} />
+            <img src="/menu-plan/logo.png" style={{ width: 30 }} />
             <h1>吃什么</h1>
           </div>
-          <div className='user'>
-            {store.user.isLogin
-              ? <div className='full-width'>
-                <UserRound size={40} />
-              </div>
-              : <div style={{ padding: '3px 10px', cursor: 'pointer', color: 'white', backgroundColor: '#999' }}>登录</div>}
-          </div>
+          <UserStatus />
         </div>
       </header>
 
@@ -51,7 +68,7 @@ const App = observer(() => {
           className={`tab-button ${activeTab === 'dishes' ? 'active' : ''}`}
           onClick={() => setActiveTab('dishes')}
         >
-          <Settings size={18} style={{ marginRight: '4px' }} />
+          <ChefHat size={18} style={{ marginRight: '4px' }} />
           菜品管理
         </button>
       </div>

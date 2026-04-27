@@ -148,9 +148,14 @@ const Store = types.model('Store', {
     }
   }));
 
+const profile = storage.getValue('profile');
 export default Store.create({
   app: App.create({ baseURL: '' }),
-  user: User.create({}),
+  user: User.create({
+    profile: profile ? JSON.parse(profile) : undefined,
+    access_token: storage.getValue('access_token') || '',
+    refresh_token: storage.getValue('refresh_token') || '',
+  }),
   kinds: [],
   dishes: [],
   currentDateTime: new Date(),

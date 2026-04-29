@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import './App.css'
 import MealPlanner from './components/MealPlanner'
 import DishManager from './components/DishManager'
-import { ChefHat } from 'lucide-react'
+import { CalendarDays, ChefHat } from 'lucide-react'
 import { useStore } from './contexts/store'
 import { getAccessToken, getDishes, getKinds, getProfile } from './apis'
 import { formatDate } from 'date-fns'
@@ -52,26 +52,28 @@ const App = observer(() => {
             <img src="/menu-plan/logo.png" style={{ width: 30 }} />
             <h1>吃什么</h1>
           </div>
+
+          <div className="tab-navigation">
+            <button
+              className={`tab-button ${activeTab === 'planner' ? 'active' : ''}`}
+              onClick={() => setActiveTab('planner')}
+              style={{ fontSize: 18 }}
+            >
+              <CalendarDays size={18}/> {formatDate(store.currentDateTime, 'yyyy-MM')}
+            </button>
+            <button
+              className={`tab-button ${activeTab === 'dishes' ? 'active' : ''}`}
+              onClick={() => setActiveTab('dishes')}
+            >
+              <ChefHat size={20} style={{ marginRight: '4px' }} />
+              菜品管理
+            </button>
+          </div>
+
           <UserStatus />
         </div>
       </header>
 
-      <div className="tab-navigation">
-        <button
-          className={`tab-button ${activeTab === 'planner' ? 'active' : ''}`}
-          onClick={() => setActiveTab('planner')}
-          style={{ fontSize: 18 }}
-        >
-          {formatDate(store.currentDateTime, 'yyyy-MM')}
-        </button>
-        <button
-          className={`tab-button ${activeTab === 'dishes' ? 'active' : ''}`}
-          onClick={() => setActiveTab('dishes')}
-        >
-          <ChefHat size={18} style={{ marginRight: '4px' }} />
-          菜品管理
-        </button>
-      </div>
       <main className="app-main">
         {activeTab === 'planner' && <MealPlanner />}
         {activeTab === 'dishes' && <DishManager />}

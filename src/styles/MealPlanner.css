@@ -40,6 +40,7 @@
   grid-template-columns: repeat(7, 1fr);
   gap: 0;
   line-height: 18px;
+  padding-bottom: 10px;
 }
 
 .weekday {
@@ -176,10 +177,6 @@
 
   .calendar-day {
     padding: 2px;
-  }
-
-  .meal-planner {
-    padding: 10px;
   }
 
   .calendar-day {

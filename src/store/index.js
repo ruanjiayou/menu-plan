@@ -69,7 +69,7 @@ const Store = types.model('Store', {
       self.dateRecordsMap.set(date, cast(data));
     },
     getDateRecords(date) {
-      return self.dateRecordsMap.get(date) || [];
+      return self.dateRecordsMap.get(date);
     },
     addDateRecord(record) {
       let records = self.dateRecordsMap.get(record.date)
@@ -117,6 +117,14 @@ const Store = types.model('Store', {
     },
     addDish(dish) {
       self.dishes.push(dish)
+    },
+    putDish(id, diff) {
+      const dish = self.dishes.find(d => d.id === id);
+      if (dish) {
+        Object.keys(diff).forEach(k => {
+          dish[k] = diff[k]
+        })
+      }
     },
     delDish(id) {
       const dish = self.dishes.find(v => v.id === id)

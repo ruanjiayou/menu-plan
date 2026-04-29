@@ -19,7 +19,7 @@ const Menu = styled.div`
 const MenuItem = styled.div`
   line-height: 1.5;
   font-size: 12px;
-  padding: 4px 10px;
+  padding: 8px 16px;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -27,6 +27,11 @@ const MenuItem = styled.div`
   justify-content: ${(props) => props.$align || 'flex-start'};
   &:hover {
     cursor: pointer;
+  }
+  &.disable {
+    background-color: lightgrey;
+    opacity: 0.7;
+    cursor: not-allowed;
   }
 `
 
@@ -39,13 +44,7 @@ function onVisibleChange(visible) {
 }
 
 function authorize(app) {
-  if (app === 'github') {
-    window.location.href = 'https://jiayou.work/gw/user/sns/github/authorize?redirect_url=' + window.location.href;
-  } else if (app === 'alipay') {
-    window.location.href = 'https://jiayou.work/gw/user/sns/alipay/authorize?redirect_url=' + window.location.href;
-  } else if (app === 'google') {
-    window.location.href = 'https://jiayou.work/gw/user/sns/google/authorize?redirect_url=' + window.location.href;
-  }
+  window.location.href = `https://jiayou.work/gw/user/sns/${app}/authorize?redirect_url=${window.location.href}`
 }
 
 const User = observer(() => {
@@ -69,10 +68,14 @@ const User = observer(() => {
       : <Dropdown
         trigger={['click']}
         overlay={<Menu>
-          <MenuItem onClick={() => authorize('github')}><Github style={{ height: 16 }} />github</MenuItem>
-          <MenuItem onClick={() => authorize('google')}><Google style={{ height: 16 }} />google</MenuItem>
+          <MenuItem onClick={() => authorize('google')}><Google style={{ height: 15 }} />google</MenuItem>
           <MenuItem onClick={() => authorize('alipay')}><Alipay style={{ height: 16 }} />支付宝</MenuItem>
-          <MenuItem><Weibo style={{ height: 16 }} />新浪微博</MenuItem>
+          <MenuItem className="disable" onClick={() => {
+            // authorize('github')
+          }}><Github style={{ height: 16 }} />github</MenuItem>
+          <MenuItem className="disable" onClick={() => {
+            // authorize('weibo')
+          }}><Weibo style={{ height: 16 }} />新浪微博</MenuItem>
         </Menu>}
         animation="slide-up"
         onVisibleChange={onVisibleChange}

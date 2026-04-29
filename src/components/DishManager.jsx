@@ -1,9 +1,34 @@
-import { Trash2, Plus } from 'lucide-react'
+import { Trash2, Plus, PencilLine } from 'lucide-react'
 import '../styles/DishManager.css'
-import { createDish, createKind, destryDish, destryKind } from '../apis'
+import { createDish, createKind, destryDish, destryKind, updateDish } from '../apis'
 import { useStore } from '../contexts/store'
 import { observer, useLocalObservable } from 'mobx-react-lite'
 import { toJS } from 'mobx'
+import Dropdown from 'rc-dropdown';
+import styled from 'styled-components'
+
+const Mask = styled.div`
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 111;
+  background-color: #00000080;
+`
+const Dialog = styled.div`
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 250px;
+  transform: translate(-50%, -50%);
+  background: #ffffff;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  border-radius: 5px;
+`
 
 const DishManager = observer(() => {
   const store = useStore()
@@ -12,7 +37,9 @@ const DishManager = observer(() => {
     newDishKindId: '',
     newKindId: '',
     newKindTitle: '',
+    editDish: null,
     setKV(k, v) {
+      console.log(v)
       this[k] = v
     }
   }))
@@ -39,6 +66,15 @@ const DishManager = observer(() => {
       });
     } else {
       return alert('添加失败 ' + result.message)
+    }
+  }
+  const putDish = async (id, title) => {
+    const result = await updateDish(id, { title })
+    if (result.success) {
+      store.putDish(id, { title })
+      local.setKV('editDish', null)
+    } else {
+      
     }
   }
 
@@ -179,17 +215,36 @@ const DishManager = observer(() => {
                   <h4>{dish.title}</h4>
                   <p className="category-label">{dish.kind?.title}</p>
                 </div>
-                <button
-                  onClick={() => deleteDish(dish.id)}
-                  className="delete-button"
-                >
-                  <Trash2 size={18} />
-                </button>
+                <div className='operation'>
+                  <button
+                    onClick={() => deleteDish(dish.id)}
+                    className="delete-button"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                  <button
+                    className="delete-button"
+                    onClick={() => local.setKV('editDish', toJS(dish))}
+                  >
+                    <PencilLine size={16} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         )}
       </div>
+      {
+        local.editDish && <Mask>
+          <Dialog>
+            <input className='form-input' style={{ flex: 0 }} defaultValue={local.editDish.title} onChange={e => { local.setKV('editDish', { ...local.editDish, title: e.target.value }) }} />
+            <div className='full-width'>
+              <button className='add-button' style={{ background: 'lightgray' }} onClick={() => local.setKV('editDish', null)}>取消</button>
+              <button className='add-button' onClick={() => { putDish(local.editDish.id, local.editDish.title) }}>确定</button>
+            </div>
+          </Dialog>
+        </Mask>
+      }
     </div>
   )
 })

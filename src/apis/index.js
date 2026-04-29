@@ -65,6 +65,9 @@ export async function createDish(data) {
 export async function destryDish(id) {
   return await shttp.delete(`/api/dishes/${id}`);
 }
+export async function updateDish(id, diff) {
+  return await shttp.put(`/api/dishes/${id}`, diff)
+}
 // records
 export async function getRecordsByDate(date) {
   const result = await shttp.get(`/api/records/${date}/dishes`);

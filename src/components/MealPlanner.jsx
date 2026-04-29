@@ -21,7 +21,7 @@ const OneDish = observer(({ item }) => {
   )
 })
 
-const Grids42 = observer(({ days, setSelectedDay }) => {
+const Grids42 = observer(({ days, setSelectedDate }) => {
   const store = useStore();
   const [todayDate] = useState(formatDate(new Date(), 'yyyy-MM-dd'))
   return <div className="calendar-days">
@@ -35,7 +35,15 @@ const Grids42 = observer(({ days, setSelectedDay }) => {
         <div
           key={dateStr}
           className={`calendar-day ${!sameMonth ? 'outside' : ''} ${dateStr === todayDate ? 'today' : ''}`}
-          onClick={() => { sameMonth && setSelectedDay(day) }}
+          onClick={() => {
+            if (sameMonth) {
+              const date = formatDate(day, 'yyyy-MM-dd');
+              if (!store.dateRecordsMap.get(date)) {
+                store.setDateRecords(date, [])
+              }
+              setSelectedDate(date)
+            }
+          }}
         >
           <div className="day-number">{format(day, 'd')}</div>
           {/* 午餐区块 */}
@@ -64,7 +72,7 @@ const Grids42 = observer(({ days, setSelectedDay }) => {
 
 const MealPlanner = observer(() => {
   const store = useStore()
-  const [selectedDay, setSelectedDay] = useState(null)
+  const [selectedDate, setSelectedDate] = useState(null)
   const swiperRef = useRef(null);
 
   useEffect(() => {
@@ -112,21 +120,21 @@ const MealPlanner = observer(() => {
           }}
         >
           <SwiperSlide id='1'>
-            <Grids42 days={store.prev42day} setSelectedDay={setSelectedDay} />
+            <Grids42 days={store.prev42day} setSelectedDate={setSelectedDate} />
           </SwiperSlide>
           <SwiperSlide id='2'>
-            <Grids42 days={store.this42day} setSelectedDay={setSelectedDay} />
+            <Grids42 days={store.this42day} setSelectedDate={setSelectedDate} />
           </SwiperSlide>
           <SwiperSlide id='3'>
-            <Grids42 days={store.next42day} setSelectedDay={setSelectedDay} />
+            <Grids42 days={store.next42day} setSelectedDate={setSelectedDate} />
           </SwiperSlide>
         </Swiper>
       </div>
-      {selectedDay && (
+      {selectedDate && (
         <DayMealSelector
-          date={formatDate(selectedDay, 'yyyy-MM-dd')}
+          date={selectedDate}
           onChange={onChange}
-          onClose={() => setSelectedDay(null)}
+          onClose={() => setSelectedDate(null)}
         />
       )}
     </div>

@@ -3,14 +3,14 @@ import { format, isSameMonth, formatDate, } from 'date-fns'
 import { getRecordsByDate, } from '../apis'
 import DayMealSelector from './DayMealSelector'
 import '../styles/MealPlanner.css'
-import { useStore } from '../contexts/store'
+
 import { getDateRepeatedList } from '../utils'
-import { toJS } from 'mobx'
-import { observer } from 'mobx-react-lite'
+import { useSnapshot } from 'valtio'
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
+import global from '../global'
 
-const OneDish = observer(({ item }) => {
+const OneDish = ({ item }) => {
   return (
     <span
       key={item.id}
@@ -19,15 +19,15 @@ const OneDish = observer(({ item }) => {
       {item.dish.title}
     </span>
   )
-})
+}
 
-const Grids42 = observer(({ days, setSelectedDate }) => {
-  const store = useStore();
+const Grids42 = ({ days, setSelectedDate }) => {
+  const store = useSnapshot(global);
   const [todayDate] = useState(formatDate(new Date(), 'yyyy-MM-dd'))
   return <div className="calendar-days">
     {days.map(day => {
       const dateStr = format(day, 'yyyy-MM-dd')
-      const dayMeals = store.dateRecordsMap.get(dateStr) || [];
+      const dayMeals = global.dateRecordsMap.get(dateStr) || [];
       const lunch = dayMeals.filter(v => v.type === 'lunch')
       const dinner = dayMeals.filter(v => v.type === 'dinner')
       const sameMonth = isSameMonth(day, store.currentDateTime)
@@ -38,8 +38,8 @@ const Grids42 = observer(({ days, setSelectedDate }) => {
           onClick={() => {
             if (sameMonth) {
               const date = formatDate(day, 'yyyy-MM-dd');
-              if (!store.dateRecordsMap.get(date)) {
-                store.setDateRecords(date, [])
+              if (!global.dateRecordsMap.get(date)) {
+                global.setDateRecords(date, [])
               }
               setSelectedDate(date)
             }
@@ -68,10 +68,10 @@ const Grids42 = observer(({ days, setSelectedDate }) => {
       )
     })}
   </div>
-})
+}
 
-const MealPlanner = observer(() => {
-  const store = useStore()
+const MealPlanner = () => {
+  const store = useSnapshot(global)
   const [selectedDate, setSelectedDate] = useState(null)
   const swiperRef = useRef(null);
 
@@ -80,18 +80,18 @@ const MealPlanner = observer(() => {
     const date = formatDate(store.currentDateTime, 'yyyy-MM-dd')
     // 获取本月所需数据(本月+前后7天)
     getRecordsByDate(date).then(list => {
-      store.setRecordsMap(list)
+      global.setRecordsMap(list)
     })
   }, [store.currentDateTime])
 
   const loadDateRecords = async () => {
-    store.loadLocalRecords(store.currentDateTime)
+    global.loadLocalRecords(store.currentDateTime)
     // 计算本月部分数据的重复菜品
     // store.calc_repeat(store.currentDateTime)
   }
 
   const onChange = () => {
-    store.setRecordsMap(toJS(store.dateRecordsMap))
+    global.setRecordsMap(store.dateRecordsMap)
   }
   return (
     <div className="meal-planner">
@@ -113,9 +113,9 @@ const MealPlanner = observer(() => {
               return;
             }
             if (evt.swipeDirection === 'prev') {
-              store.subMonth()
+              global.subMonth()
             } else {
-              store.addMonth()
+              global.addMonth()
             }
             evt.slideTo(1, 0);
           }}
@@ -140,5 +140,5 @@ const MealPlanner = observer(() => {
       )}
     </div>
   )
-})
+}
 export default MealPlanner

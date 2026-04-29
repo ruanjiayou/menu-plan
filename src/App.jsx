@@ -1,47 +1,47 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import './App.css'
 import MealPlanner from './components/MealPlanner'
 import DishManager from './components/DishManager'
 import { CalendarDays, ChefHat } from 'lucide-react'
-import { useStore } from './contexts/store'
 import { getAccessToken, getDishes, getKinds, getProfile } from './apis'
 import { formatDate } from 'date-fns'
-import { observer } from 'mobx-react-lite'
 import UserStatus from './components/UserStatus'
+import { useSnapshot } from 'valtio'
+import global from './global/index'
 
-const App = observer(() => {
-  const store = useStore()
+const App = () => {
+  const store = useSnapshot(global)
   const [activeTab, setActiveTab] = useState('planner')
-  const init = useCallback(async () => {
-    if (store.user.refresh_token && !store.user.access_token) {
-      try {
-        const tokens = await getAccessToken(store.user.refresh_token)
-        if (tokens) {
-          store.user.setAccessToken(tokens.access_token)
-          store.user.setRefreshToken(tokens.refresh_token)
-        }
-      } catch (e) {
-
-      }
-    }
-    if (store.user.access_token && !store.user.profile) {
-      const result = await getProfile();
-      store.user.setProfile(result.item)
-    }
-
-    const kinds = await getKinds()
-    store.setKinds(kinds)
-    const dishes = await getDishes({ with: 'kind' })
-    store.setDishes(dishes)
-  });
 
   useEffect(() => {
     const search = new URLSearchParams(window.location.search)
     const refresh_token = search.get('refresh_token')
     if (refresh_token) {
-      store.user.setRefreshToken(refresh_token)
+      store.user.refresh_token = (refresh_token)
       window.location.replace(window.location.origin + window.location.pathname)
     }
+    const init = async () => {
+      if (store.user.refresh_token && !store.user.access_token) {
+        try {
+          const tokens = await getAccessToken(store.user.refresh_token)
+          if (tokens) {
+            global.user.access_token = (tokens.access_token)
+            global.user.refresh_token = (tokens.refresh_token)
+          }
+        } catch (e) {
+
+        }
+      }
+      if (store.user.access_token && !store.user.profile) {
+        const result = await getProfile();
+        global.user.profile = (result.item)
+      }
+
+      const kinds = await getKinds()
+      global.kinds = kinds;
+      const dishes = await getDishes({ with: 'kind' })
+      global.dishes = dishes
+    };
     init()
   }, [])
   return (
@@ -59,7 +59,7 @@ const App = observer(() => {
               onClick={() => setActiveTab('planner')}
               style={{ fontSize: 18 }}
             >
-              <CalendarDays size={18}/> {formatDate(store.currentDateTime, 'yyyy-MM')}
+              <CalendarDays size={18} /> {formatDate(store.currentDateTime, 'yyyy-MM')}
             </button>
             <button
               className={`tab-button ${activeTab === 'dishes' ? 'active' : ''}`}
@@ -80,5 +80,5 @@ const App = observer(() => {
       </main>
     </div>
   )
-})
+}
 export default App;

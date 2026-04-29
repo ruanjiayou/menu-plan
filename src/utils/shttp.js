@@ -1,5 +1,5 @@
 import axios from 'axios';
-import store from '../store';
+import { User } from '../global/User';
 
 let isRefreshing = false;
 let requestQueue = [];
@@ -12,10 +12,7 @@ const shttp = axios.create({
 
 shttp.interceptors.request.use(
   (config) => {
-    if (store.app.debug) {
-      console.log(`${config.method} ${config.url}`);
-    }
-    if (store.user.access_token) {
+    if (User.access_token) {
       config.headers['Authorization'] = 'Bearer ' + store.user.access_token;
     }
     return config;
@@ -28,9 +25,6 @@ shttp.interceptors.request.use(
 
 shttp.interceptors.response.use(
   async (response) => {
-    if (store.app.debug) {
-      // console.log(response.status, response.data);
-    }
     const config = response.config;
     // 判断业务码：code === 101010 表示 token 过期
     if (response.config.url !== '/gw/user/oauth/refresh' && response.data.code === 101010 && !config._retry) {
@@ -50,8 +44,8 @@ shttp.interceptors.response.use(
         });
         if (resp && resp.data && resp.data.code === 0) {
           const tokens = resp.data.data;
-          store.user.setAccessToken(tokens.access_token);
-          store.user.setRefreshToken(tokens.refresh_token);
+          User.access_token = (tokens.access_token);
+          User.refresh_token = (tokens.refresh_token);
         }
         // 执行队列中的请求
         requestQueue.forEach(p => p.resolve());
@@ -71,7 +65,7 @@ shttp.interceptors.response.use(
     console.log(error, 'response error');
     if (error.response) {
       if (error.response.data.code === 101020) {
-        store.user.setAccessToken('');
+        User.access_token = ('');
       }
     } else {
     }

@@ -1,7 +1,7 @@
-import { observer } from 'mobx-react-lite'
 import { UserRound } from 'lucide-react'
 import Dropdown from 'rc-dropdown';
-import { useStore } from '../contexts/store'
+import global from '../global'
+
 import 'rc-dropdown/assets/index.css';
 import { styled } from '@linaria/react';
 import Github from '../asserts/github.svg?react';
@@ -9,6 +9,7 @@ import Google from '../asserts/google.svg?react';
 import Alipay from '../asserts/alipay.svg?react';
 import Weibo from '../asserts/weibo.svg?react';
 import { logout } from '../apis';
+import { useSnapshot } from 'valtio';
 
 const Menu = styled.div`
   padding: 5px 0;
@@ -47,8 +48,8 @@ function authorize(app) {
   window.location.href = `https://jiayou.work/gw/user/sns/${app}/authorize?redirect_url=${window.location.href}`
 }
 
-const User = observer(() => {
-  const store = useStore()
+const User = () => {
+  const store = useSnapshot(global)
   const profile = store.user.profile;
   return <div className='user full-width'>
     {store.user.isLogin
@@ -84,6 +85,6 @@ const User = observer(() => {
       </Dropdown>
     }
   </div>
-})
+}
 
 export default User;

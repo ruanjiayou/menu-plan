@@ -1,10 +1,9 @@
 import { Trash2, Plus, PencilLine } from 'lucide-react'
 import '../styles/DishManager.css'
 import { createDish, createKind, destryDish, destryKind, updateDish } from '../apis'
-import { useStore } from '../contexts/store'
-import { observer, useLocalObservable } from 'mobx-react-lite'
-import { toJS } from 'mobx'
 import { styled } from '@linaria/react';
+import global from '../global'
+import { proxy, useSnapshot } from 'valtio'
 
 const Mask = styled.div`
   position: absolute;
@@ -29,9 +28,9 @@ const Dialog = styled.div`
   border-radius: 5px;
 `
 
-const DishManager = observer(() => {
-  const store = useStore()
-  const local = useLocalObservable(() => ({
+const DishManager = () => {
+  const store = useSnapshot(global)
+  const local = proxy({
     newDishTitle: '',
     newDishKindId: '',
     newKindId: '',
@@ -41,7 +40,7 @@ const DishManager = observer(() => {
       console.log(v)
       this[k] = v
     }
-  }))
+  })
 
   const addDish = async () => {
     if (!local.newDishKindId.trim() || !local.newDishTitle.trim()) {
@@ -56,7 +55,7 @@ const DishManager = observer(() => {
     const result = await createDish(data)
     if (result.success) {
       const kind = store.kinds.find(k => k.id === data.kind_id)
-      result.data.info.kind = kind ? toJS(kind) : { title: 'None' }
+      result.data.info.kind = kind ? kind : { title: 'None' }
       store.addDish(result.data.info)
       local.setKV('newDishTitle', '')
       const inputs = document.querySelectorAll('#add-dish input')
@@ -223,7 +222,7 @@ const DishManager = observer(() => {
                   </button>
                   <button
                     className="delete-button"
-                    onClick={() => local.setKV('editDish', toJS(dish))}
+                    onClick={() => local.setKV('editDish', dish)}
                   >
                     <PencilLine size={16} />
                   </button>
@@ -246,6 +245,6 @@ const DishManager = observer(() => {
       }
     </div>
   )
-})
+}
 
 export default DishManager

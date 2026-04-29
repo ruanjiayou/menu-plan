@@ -1,15 +1,14 @@
 import { X, Plus, Check, Eye, EyeOff } from 'lucide-react'
 import '../styles/DayMealSelector.css'
-import { useStore } from '../contexts/store'
-import store from '../store'
-import { observer, useLocalObservable } from 'mobx-react-lite'
 import { createRecord, destryRecord } from '../apis'
 import { v7 } from 'uuid'
-import { toJS } from 'mobx'
+import global from '../global'
+import { proxy, useSnapshot } from 'valtio'
 
-const DayMealSelector = observer(({ date, onChange, onClose }) => {
+const DayMealSelector = ({ date, onChange, onClose }) => {
+  const store = useSnapshot(global)
   const dishes = store.dishes;
-  const local = useLocalObservable(() => ({
+  const local = proxy({
     showDishList: false,
     type: '',
     get todayDishes() {
@@ -28,14 +27,15 @@ const DayMealSelector = observer(({ date, onChange, onClose }) => {
       }
     },
     openDishSelector(type) {
-      local.type = type;
-      local.showDishList = true;
+      this.type = type;
+      this.showDishList = true;
     },
     closeDishSelector() {
-      local.showDishList = false;
-      local.type = '';
+      this.showDishList = false;
+      this.type = '';
     }
-  }))
+  })
+  const snap = useSnapshot(local);
   const handleRemoveDish = async (record) => {
     store.removeDateRecord(record)
     destryRecord(record.id)
@@ -47,7 +47,7 @@ const DayMealSelector = observer(({ date, onChange, onClose }) => {
   const handleToggleDish = async (dish) => {
     const record = local.todayDishes.find(d => d.dish_id === dish.id);
     if (record) {
-      store.removeDateRecord(toJS(record))
+      store.removeDateRecord(record)
       destryRecord(record.id)
     } else {
       const id = v7()
@@ -71,8 +71,8 @@ const DayMealSelector = observer(({ date, onChange, onClose }) => {
           <div className="meal-section">
             <h4 className="meal-title">🍴 午餐</h4>
             <div className="selected-dishes-list">
-              {local.lunch.length > 0 ? (
-                local.lunch.map(dish => {
+              {snap.lunch.length > 0 ? (
+                snap.lunch.map(dish => {
                   const key = `lunch_${dish.id}`
                   return (
                     <div key={key} className={`dish-tag-wrapper ${dish.repeated ? 'repeated' : ''}`}>
@@ -91,7 +91,7 @@ const DayMealSelector = observer(({ date, onChange, onClose }) => {
                         </button>
                         <button
                           className="remove-btn"
-                          onClick={() => handleRemoveDish(toJS(dish))}
+                          onClick={() => handleRemoveDish(dish)}
                           title="删除菜品"
                         >
                           ×
@@ -116,8 +116,8 @@ const DayMealSelector = observer(({ date, onChange, onClose }) => {
           <div className="meal-section">
             <h4 className="meal-title">🍽️ 晚餐</h4>
             <div className="selected-dishes-list">
-              {local.dinner.length > 0 ? (
-                local.dinner.map(dish => {
+              {snap.dinner.length > 0 ? (
+                snap.dinner.map(dish => {
                   const key = `dinner_${dish.id}`
                   return (
                     <div key={key} className={`dish-tag-wrapper ${dish.repeated ? 'repeated' : ''}`}>
@@ -134,7 +134,7 @@ const DayMealSelector = observer(({ date, onChange, onClose }) => {
                         </button>
                         <button
                           className="remove-btn"
-                          onClick={() => handleRemoveDish(toJS(dish))}
+                          onClick={() => handleRemoveDish(dish)}
                           title="删除菜品"
                         >
                           ×
@@ -158,9 +158,8 @@ const DayMealSelector = observer(({ date, onChange, onClose }) => {
 
         {/* 移除模态框页脚，不要保存按钮 */}
       </div>
-
       {/* 菜品选择弹框 */}
-      {local.showDishList && (
+      {snap.showDishList && (
         <DishSelectorOverlay
           categories={store.kinds}
           dishes={dishes}
@@ -171,11 +170,11 @@ const DayMealSelector = observer(({ date, onChange, onClose }) => {
       )}
     </div>
   )
-})
+}
 
 // 菜品选择组件
-const DishSelectorOverlay = observer(({ date, onToggleDish, onClose }) => {
-  const store = useStore()
+const DishSelectorOverlay = ({ date, onToggleDish, onClose }) => {
+  const store = useSnapshot(global)
   const selectedDishes = store.getDateRecords(date)
   const dishsByCategory = store.kinds.map(kind => {
     return {
@@ -206,7 +205,7 @@ const DishSelectorOverlay = observer(({ date, onToggleDish, onClose }) => {
                     <button
                       key={dish.id}
                       className={`dish-cell ${isSelected ? 'selected' : ''} ${isRepeated ? 'repeated' : ''}`}
-                      onClick={() => onToggleDish(toJS(dish), !isSelected)}
+                      onClick={() => onToggleDish(dish, !isSelected)}
                       title={isRepeated ? '该菜品最近7天内有重复' : ''}
                     >
                       <span className="dish-cell-name">{dish.title}</span>
@@ -232,6 +231,6 @@ const DishSelectorOverlay = observer(({ date, onToggleDish, onClose }) => {
       </div>
     </div>
   )
-})
+}
 
 export default DayMealSelector

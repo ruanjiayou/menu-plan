@@ -8,7 +8,7 @@ import { getDateRepeatedList } from '../utils'
 import { toJS } from 'mobx'
 import { observer } from 'mobx-react-lite'
 import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/swiper.css';
+import 'swiper/css';
 
 const OneDish = observer(({ item }) => {
   return (
@@ -103,6 +103,7 @@ const MealPlanner = observer(() => {
         </div>
         <Swiper
           initialSlide={1} // 默认显示第二个
+          modules={[]}
           ref={ref => swiperRef.current = ref}
           style={{ width: '100%' }}
           spaceBetween={50}

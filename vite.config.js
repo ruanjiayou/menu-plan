@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import svgr from 'vite-plugin-svgr';
 import { visualizer } from 'rollup-plugin-visualizer';
+import wyw from '@wyw-in-js/vite';
 
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -28,6 +29,7 @@ export default defineConfig(({ command, mode }) => {
   return {
     base: env.APP_SCOPE,
     plugins: [
+      wyw(),
       react(),
       svgr(),
       VitePWA({

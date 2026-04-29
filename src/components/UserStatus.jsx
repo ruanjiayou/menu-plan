@@ -3,7 +3,7 @@ import { UserRound } from 'lucide-react'
 import Dropdown from 'rc-dropdown';
 import { useStore } from '../contexts/store'
 import 'rc-dropdown/assets/index.css';
-import styled from 'styled-components';
+import { styled } from '@linaria/react';
 import Github from '../asserts/github.svg?react';
 import Google from '../asserts/google.svg?react';
 import Alipay from '../asserts/alipay.svg?react';

@@ -4,8 +4,7 @@ import { createDish, createKind, destryDish, destryKind, updateDish } from '../a
 import { useStore } from '../contexts/store'
 import { observer, useLocalObservable } from 'mobx-react-lite'
 import { toJS } from 'mobx'
-import Dropdown from 'rc-dropdown';
-import styled from 'styled-components'
+import { styled } from '@linaria/react';
 
 const Mask = styled.div`
   position: absolute;

@@ -1,6 +1,8 @@
 import { UserRound } from 'lucide-react'
 import Dropdown from 'rc-dropdown';
 import global from '../global'
+import { logout } from '../apis';
+import { useSnapshot } from 'valtio';
 
 import 'rc-dropdown/assets/index.css';
 import { styled } from '@linaria/react';
@@ -8,8 +10,6 @@ import Github from '../asserts/github.svg?react';
 import Google from '../asserts/google.svg?react';
 import Alipay from '../asserts/alipay.svg?react';
 import Weibo from '../asserts/weibo.svg?react';
-import { logout } from '../apis';
-import { useSnapshot } from 'valtio';
 
 const Menu = styled.div`
   padding: 5px 0;
@@ -35,7 +35,18 @@ const MenuItem = styled.div`
     cursor: not-allowed;
   }
 `
-
+const Avatar = styled.img`
+  height: 30px;
+  border-radius: 50%;
+`
+const Login = styled.div`
+  padding: 3px 10px;
+  cursor: pointer;
+  font-size: 14px;
+  border-radius: 5px;
+  color: white;
+  background-color: #999;
+`
 function onSelect({ key }) {
   console.log(`${key} selected`);
 }
@@ -51,7 +62,7 @@ function authorize(app) {
 const User = () => {
   const store = useSnapshot(global)
   const profile = store.user.profile;
-  return <div className='user full-width'>
+  return <div>
     {store.user.isLogin
       ? <Dropdown
         trigger={['click']}
@@ -59,12 +70,12 @@ const User = () => {
           <MenuItem>{profile.nickname}</MenuItem>
           <MenuItem onClick={() => {
             logout()
-            store.user.logout()
+            global.logout()
           }} $align='center'>退出</MenuItem>
         </Menu>}
         animation="slide-up"
       >
-        {<img src={profile.avatar} style={{ height: 30, borderRadius: '50%' }} /> || <UserRound size={30} />}
+        {<Avatar src={profile.avatar} /> || <UserRound size={30} />}
       </Dropdown>
       : <Dropdown
         trigger={['click']}
@@ -81,7 +92,7 @@ const User = () => {
         animation="slide-up"
         onVisibleChange={onVisibleChange}
       >
-        <div style={{ padding: '3px 10px', cursor: 'pointer', fontSize: 14, borderRadius: 5, color: 'white', backgroundColor: '#999' }}>登录</div>
+        <Login>登录</Login>
       </Dropdown>
     }
   </div>

@@ -1,130 +1,142 @@
 import { X, Plus, Check, Eye, EyeOff } from 'lucide-react'
-import '../styles/DayMealSelector.css'
 import { createRecord, destryRecord } from '../apis'
 import { v7 } from 'uuid'
-import global from '../global'
-import { proxy, useSnapshot } from 'valtio'
+import global, { useLocalProxy } from '../global'
+import { useSnapshot } from 'valtio'
+import { Button, Mask, Modal, ModalHeader, ModalContent, ModalFooter } from '../styles/common';
+import {
+  MealSection,
+  MealTitle,
+  SelectedDishesList,
+  DishTagWrapper,
+  DishTagContent,
+  DishTagActions,
+  RepeatCheck,
+  EmptyText,
+  DishesGrid,
+  CategoryTitle,
+  DishCell,
+  DishCellChecked,
+  DishCellRepeated
+} from '../styles/DayMealSelector'
 
 const DayMealSelector = ({ date, onChange, onClose }) => {
   const store = useSnapshot(global)
-  const dishes = store.dishes;
-  const local = proxy({
+
+  const todayDishes = store.getDateRecords(date) || []
+  const lunchDishes = todayDishes.filter(d => d.type === 'lunch')
+  const dinnerDishes = todayDishes.filter(d => d.type === 'dinner')
+
+  const [localState, localProxy] = useLocalProxy({
     showDishList: false,
     type: '',
-    get todayDishes() {
-      return store.getDateRecords(date)
-    },
-    get lunch() {
-      return this.todayDishes.filter(d => d.type === 'lunch')
-    },
-    get dinner() {
-      return this.todayDishes.filter(d => d.type === 'dinner')
-    },
-    toggleDishRepeat(id) {
-      const item = this.todayDishes.find(d => d.id === id)
-      if (item) {
-        item.can_repeated = !item.can_repeated
-      }
-    },
-    openDishSelector(type) {
-      this.type = type;
+    date,
+    // toggleDishRepeat(id) {
+    //   const item = this.todayDishes.find(d => d.id === id)
+    //   if (item) {
+    //     item.can_repeated = !item.can_repeated
+    //   }
+    // },
+    openDishes(type) {
+      this.type = type
       this.showDishList = true;
     },
-    closeDishSelector() {
+    closeDishes() {
+      this.type = ''
       this.showDishList = false;
-      this.type = '';
-    }
-  })
-  const snap = useSnapshot(local);
+    },
+  });
+
   const handleRemoveDish = async (record) => {
-    store.removeDateRecord(record)
+    global.removeDateRecord(record)
     destryRecord(record.id)
   }
 
   const handleToggleDishRepeat = (id) => {
-    local.toggleDishRepeat(id)
+    // localProxy.toggleDishRepeat(id)
   }
   const handleToggleDish = async (dish) => {
-    const record = local.todayDishes.find(d => d.dish_id === dish.id);
+    const record = todayDishes.find(d => d.dish_id === dish.id);
     if (record) {
-      store.removeDateRecord(record)
+      global.removeDateRecord(record)
       destryRecord(record.id)
     } else {
       const id = v7()
-      const data = { id, dish_id: dish.id, date, type: local.type, can_repeated: 0, sn: 1, time: new Date() }
-      store.addDateRecord({ ...data, dish })
+      const data = { id, dish_id: dish.id, date, type: localState.type, can_repeated: 0, sn: 1, time: new Date() }
+      global.addDateRecord({ ...data, dish })
       createRecord(data)
     }
   }
   return (
-    <div className="day-selector-overlay" onClick={onClose}>
-      <div className="day-selector-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="modal-header">
+    <Mask onClick={onClose}>
+      <Modal onClick={(e) => e.stopPropagation()}>
+        <ModalHeader>
           <h3>{date}</h3>
-          <button onClick={onClose} className="close-button">
+          <div onClick={onClose}>
             <X size={24} />
-          </button>
-        </div>
+          </div>
+        </ModalHeader>
 
-        <div className="modal-content">
+        <ModalContent>
           {/* 午餐区块 */}
-          <div className="meal-section">
-            <h4 className="meal-title">🍴 午餐</h4>
-            <div className="selected-dishes-list">
-              {snap.lunch.length > 0 ? (
-                snap.lunch.map(dish => {
+          <MealSection style={{ marginBottom: 20 }}>
+            <MealTitle>🍴 午餐</MealTitle>
+            <SelectedDishesList>
+              {lunchDishes.length > 0 ? (
+                lunchDishes.map(dish => {
                   const key = `lunch_${dish.id}`
                   return (
-                    <div key={key} className={`dish-tag-wrapper ${dish.repeated ? 'repeated' : ''}`}>
-                      <span className="dish-tag-content">
+                    <DishTagWrapper key={key} className={`${dish.repeated ? 'repeated' : ''}`}>
+                      <DishTagContent>
                         {dish.dish.title}
-                      </span>
-                      <div className="dish-tag-actions">
-                        <button
-                          className={`repeat-check ${dish.can_repeated ? 'enabled' : 'disabled'}`}
+                      </DishTagContent>
+                      <DishTagActions>
+                        <RepeatCheck
+                          className={`${dish.can_repeated ? 'enabled' : 'disabled'}`}
                           onClick={() => {
                             handleToggleDishRepeat(dish.id)
                           }}
                           title={dish.can_repeated ? '不参与重复判断' : '参与重复判断'}
                         >
                           {dish.can_repeated ? <Eye size={12} /> : <EyeOff size={12} />}
-                        </button>
-                        <button
-                          className="remove-btn"
+                        </RepeatCheck>
+                        <Button
+                          className='delete'
                           onClick={() => handleRemoveDish(dish)}
                           title="删除菜品"
                         >
                           ×
-                        </button>
-                      </div>
-                    </div>
+                        </Button>
+                      </DishTagActions>
+                    </DishTagWrapper>
                   )
                 })
               ) : (
-                <p className="empty-text">未选择菜品</p>
+                <EmptyText>未选择菜品</EmptyText>
               )}
-            </div>
-            <button
-              className="add-dish-btn"
-              onClick={() => local.openDishSelector('lunch')}
+            </SelectedDishesList>
+            <Button className='add'
+              onClick={() => {
+                localProxy.openDishes('lunch');
+              }}
             >
               <Plus size={16} /> 添加菜品
-            </button>
-          </div>
+            </Button>
+          </MealSection>
 
           {/* 晚餐区块 */}
-          <div className="meal-section">
-            <h4 className="meal-title">🍽️ 晚餐</h4>
-            <div className="selected-dishes-list">
-              {snap.dinner.length > 0 ? (
-                snap.dinner.map(dish => {
+          <MealSection>
+            <MealTitle>🍽️ 晚餐</MealTitle>
+            <SelectedDishesList>
+              {dinnerDishes.length > 0 ? (
+                dinnerDishes.map(dish => {
                   const key = `dinner_${dish.id}`
                   return (
-                    <div key={key} className={`dish-tag-wrapper ${dish.repeated ? 'repeated' : ''}`}>
-                      <span className="dish-tag-content">
+                    <DishTagWrapper key={key} className={`${dish.repeated ? 'repeated' : ''}`}>
+                      <DishTagContent>
                         {dish.dish.title}
-                      </span>
-                      <div className="dish-tag-actions">
+                      </DishTagContent>
+                      <DishTagActions>
                         <button
                           className={`repeat-check ${dish.can_repeated ? 'enabled' : 'disabled'}`}
                           onClick={() => handleToggleDishRepeat(dish.id)}
@@ -132,43 +144,41 @@ const DayMealSelector = ({ date, onChange, onClose }) => {
                         >
                           {dish.can_repeated ? <Eye size={12} /> : <EyeOff size={12} />}
                         </button>
-                        <button
-                          className="remove-btn"
+                        <Button className='delete'
                           onClick={() => handleRemoveDish(dish)}
                           title="删除菜品"
                         >
                           ×
-                        </button>
-                      </div>
-                    </div>
+                        </Button>
+                      </DishTagActions>
+                    </DishTagWrapper>
                   )
                 })
               ) : (
-                <p className="empty-text">未选择菜品</p>
+                <EmptyText>未选择菜品</EmptyText>
               )}
-            </div>
-            <button
-              className="add-dish-btn"
-              onClick={() => local.openDishSelector('dinner')}
+            </SelectedDishesList>
+            <Button
+              className='add'
+              onClick={() => {
+                localProxy.closeDishes('dinner');
+              }}
             >
               <Plus size={16} /> 添加菜品
-            </button>
-          </div>
-        </div>
-
-        {/* 移除模态框页脚，不要保存按钮 */}
-      </div>
+            </Button>
+          </MealSection>
+        </ModalContent>
+      </Modal>
       {/* 菜品选择弹框 */}
-      {snap.showDishList && (
+      {localState.showDishList && (
         <DishSelectorOverlay
           categories={store.kinds}
-          dishes={dishes}
           date={date}
           onToggleDish={handleToggleDish}
-          onClose={() => local.closeDishSelector(false)}
+          onClose={() => { localProxy.closeDishes() }}
         />
       )}
-    </div>
+    </Mask>
   )
 }
 
@@ -183,53 +193,52 @@ const DishSelectorOverlay = ({ date, onToggleDish, onClose }) => {
     }
   })
   return (
-    <div className="dish-selector-modal-overlay" onClick={onClose}>
-      <div className="dish-selector-modal" onClick={(e) => e.stopPropagation()}>
-        <div className="dish-selector-header">
+    <Mask onClick={onClose}>
+      <Modal onClick={(e) => e.stopPropagation()}>
+        <ModalHeader>
           <h3>选择菜品 </h3>
-          <button onClick={onClose} className="close-button">
+          <div onClick={onClose}>
             <X size={24} />
-          </button>
-        </div>
+          </div>
+        </ModalHeader>
 
-        <div className="dish-selector-content">
+        <ModalContent>
           {/* 分类栏显示所有菜品 */}
           {dishsByCategory.map(({ kind, dishes }) => (
-            <div key={kind.id} className="dish-category-section">
-              <h4 className="category-title">{kind.title}</h4>
-              <div className="dishes-grid">
+            <div key={kind.id} style={{ marginBottom: 10 }}>
+              <CategoryTitle>{kind.title}</CategoryTitle>
+              <DishesGrid>
                 {dishes.map(dish => {
                   const isSelected = selectedDishes.findIndex(d => d.dish_id === dish.id) !== -1
                   const isRepeated = dish.repeated
                   return (
-                    <button
+                    <DishCell
                       key={dish.id}
-                      className={`dish-cell ${isSelected ? 'selected' : ''} ${isRepeated ? 'repeated' : ''}`}
+                      className={`${isSelected ? 'selected' : ''} ${isRepeated ? 'repeated' : ''}`}
                       onClick={() => onToggleDish(dish, !isSelected)}
                       title={isRepeated ? '该菜品最近7天内有重复' : ''}
                     >
                       <span className="dish-cell-name">{dish.title}</span>
                       {isSelected && (
-                        <span className="dish-cell-check">
+                        <DishCellChecked>
                           <Check size={16} />
-                        </span>
+                        </DishCellChecked>
                       )}
                       {isRepeated && (
-                        <span className="dish-cell-repeated" title="重复菜品">⚠️</span>
+                        <DishCellRepeated title="重复菜品">⚠️</DishCellRepeated>
                       )}
-                    </button>
+                    </DishCell>
                   )
                 })}
-              </div>
+              </DishesGrid>
             </div>
           ))}
-        </div>
-
-        <div className="dish-selector-footer">
-          <button onClick={onClose} className="close-selector-btn">完成</button>
-        </div>
-      </div>
-    </div>
+        </ModalContent>
+        <ModalFooter>
+          <Button onClick={onClose} className="add">完成</Button>
+        </ModalFooter>
+      </Modal>
+    </Mask>
   )
 }
 

@@ -1,36 +1,24 @@
-import { Trash2, Plus, PencilLine } from 'lucide-react'
-import '../styles/DishManager.css'
+import { useSnapshot } from 'valtio'
+import { Trash2, Plus, PencilLine, X } from 'lucide-react'
+import global, { useLocalProxy } from '../global'
 import { createDish, createKind, destryDish, destryKind, updateDish } from '../apis'
-import { styled } from '@linaria/react';
-import global from '../global'
-import { proxy, useSnapshot } from 'valtio'
+import { FullWidth, Button, Mask, Modal, ModalFooter, ModalHeader, ModalContent, } from '../styles/common';
 
-const Mask = styled.div`
-  position: absolute;
-  left: 0;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 111;
-  background-color: #00000080;
-`
-const Dialog = styled.div`
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 250px;
-  transform: translate(-50%, -50%);
-  background: #ffffff;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  border-radius: 5px;
-`
+import {
+  Main,
+  DishForm,
+  FormGroup,
+  input_select,
+  DishesList,
+  DishesGrid,
+  DishCard,
+  DishInfo,
+  Operation,
+  CategoryLabel,
+} from '../styles/DishManager'
 
 const DishManager = () => {
-  const store = useSnapshot(global)
-  const local = proxy({
+  const [localState, localProxy] = useLocalProxy({
     newDishTitle: '',
     newDishKindId: '',
     newKindId: '',
@@ -41,23 +29,24 @@ const DishManager = () => {
       this[k] = v
     }
   })
+  const store = useSnapshot(global)
 
   const addDish = async () => {
-    if (!local.newDishKindId.trim() || !local.newDishTitle.trim()) {
+    if (!localState.newDishKindId.trim() || !localState.newDishTitle.trim()) {
       alert('请输入菜品名称和分类')
       return
     }
 
     const data = {
-      title: local.newDishTitle.trim(),
-      kind_id: local.newDishKindId,
+      title: localState.newDishTitle.trim(),
+      kind_id: localState.newDishKindId,
     }
     const result = await createDish(data)
     if (result.success) {
       const kind = store.kinds.find(k => k.id === data.kind_id)
       result.data.info.kind = kind ? kind : { title: 'None' }
-      store.addDish(result.data.info)
-      local.setKV('newDishTitle', '')
+      global.addDish(result.data.info)
+      localProxy.setKV('newDishTitle', '')
       const inputs = document.querySelectorAll('#add-dish input')
       inputs.forEach(o => {
         o.value = '';
@@ -69,37 +58,37 @@ const DishManager = () => {
   const putDish = async (id, title) => {
     const result = await updateDish(id, { title })
     if (result.success) {
-      store.putDish(id, { title })
-      local.setKV('editDish', null)
+      global.putDish(id, { title })
+      localProxy.setKV('editDish', null)
     } else {
-      
+
     }
   }
 
   const deleteDish = async (id) => {
     const result = await destryDish(id)
     if (result.success) {
-      store.delDish(id)
+      global.delDish(id)
     } else {
       return alert('删除失败 ' + result.message)
     }
   }
 
   const addKind = async () => {
-    if (!local.newKindId.trim() || !local.newKindTitle.trim()) {
+    if (!localState.newKindId.trim() || !localState.newKindTitle.trim()) {
       alert('请输入分类')
       return
     }
 
     const data = {
-      id: local.newKindId.trim(),
-      title: local.newKindTitle.trim(),
+      id: localState.newKindId.trim(),
+      title: localState.newKindTitle.trim(),
     }
     const result = await createKind(data)
     if (result.success) {
       store.addKind(result.data.info)
-      local.setKV('newKindId', '')
-      local.setKV('newKindTitle', '')
+      localProxy.setKV('newKindId', '')
+      localProxy.setKV('newKindTitle', '')
       const inputs = document.querySelectorAll('#add-kind input')
       inputs.forEach(o => {
         o.value = '';
@@ -112,138 +101,149 @@ const DishManager = () => {
   const deleteKind = async (id) => {
     const result = await destryKind(id)
     if (result.success) {
-      store.delKind(id)
+      global.delKind(id)
     } else {
       return alert('删除失败 ' + result.message)
     }
   }
 
   return (
-    <div className="dish-manager">
-      <div className="dish-form">
+    <Main>
+      <DishForm>
         <h3>添加菜品</h3>
-        <div id="add-dish" className="form-group">
+        <FormGroup id="add-dish" >
           <input
             type="text"
             placeholder="菜品名称"
-            defaultValue={local.newDishTitle}
+            defaultValue={localState.newDishTitle}
             onChange={(e) => {
-              local.setKV('newDishTitle', e.target.value)
+              localProxy.setKV('newDishTitle', e.target.value)
             }}
-            className="form-input"
+            className={input_select}
           />
-        </div>
-        <div className="form-group">
-          <div className='full-width'>
+        </FormGroup>
+        <FormGroup>
+          <div className={FullWidth}>
             {store.kinds.map(kind => (
               <div key={kind.id} style={{ whiteSpace: 'nowrap' }} onTouchStart={() => {
-                local.setKV('newDishKindId', kind.id)
+                localProxy.setKV('newDishKindId', kind.id)
               }} onClick={() => {
-                local.setKV('newDishKindId', kind.id)
+                localProxy.setKV('newDishKindId', kind.id)
               }}>
-                <input type="radio" readOnly name="newKindId" value={kind.id} checked={local.newDishKindId === kind.id} />
+                <input type="radio" readOnly name="newKindId" value={kind.id} checked={localState.newDishKindId === kind.id} />
                 {kind.title}
               </div>
             ))}
           </div>
-        </div>
-        <button onClick={addDish} className="add-button">
+        </FormGroup>
+        <Button onClick={addDish} className="add">
           <Plus size={18} /> 添加菜品
-        </button>
+        </Button>
 
 
-        <div className="dishes-list">
+        <DishesList>
           <h3>分类列表 ({store.kinds.length})</h3>
           {store.kinds.length === 0 ? (
             <p className="empty-text">还没有分类，请先添加</p>
           ) : (
-            <div className="dishes-grid">
+            <DishesGrid>
               {store.kinds.map(kind => (
-                <div key={kind.id} className="dish-card">
-                  <div className="dish-info">
+                <DishCard key={kind.id} >
+                  <DishInfo>
                     <h4>{kind.title}</h4>
-                  </div>
-                  <button
-                    onClick={() => deleteKind(kind.id)}
-                    className="delete-button"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </div>
+                  </DishInfo>
+                  <Operation>
+                    <Button
+                      onClick={() => deleteKind(kind.id)}
+                      className="delete"
+                    >
+                      <Trash2 size={18} />
+                    </Button>
+                  </Operation>
+                </DishCard>
               ))}
-            </div>
+            </DishesGrid>
           )}
-        </div>
-        <div id="add-kind" className="form-group" style={{ display: 'flex', flexDirection: 'row', gap: 10 }}>
+        </DishesList>
+        <FormGroup id="add-kind" style={{ display: 'flex', flexDirection: 'row', gap: 10 }}>
           <input
             type="text"
             placeholder="新分类id"
-            value={local.newKindId}
+            value={localState.newKindId}
             style={{ flex: 1 }}
             onChange={(e) => {
-              local.setKV('newKindId', e.target.value)
+              localProxy.setKV('newKindId', e.target.value)
             }}
-            className="form-input"
+            className={input_select}
           />
           <input
             type="text"
             placeholder="新分类名称"
-            value={local.newKindTitle}
+            value={localState.newKindTitle}
             style={{ flex: 1 }}
             onChange={(e) => {
-              local.setKV('newKindTitle', e.target.value)
+              localProxy.setKV('newKindTitle', e.target.value)
             }}
-            className="form-input"
+            className={input_select}
           />
-        </div>
-        <button onClick={addKind} className="add-button">
+        </FormGroup>
+        <Button onClick={addKind} className="add">
           <Plus size={18} /> 添加分类
-        </button>
-      </div>
+        </Button>
+      </DishForm>
 
-      <div className="dishes-list">
+      <DishesList>
         <h3>菜品列表 ({store.dishes.length})</h3>
         {store.dishes.length === 0 ? (
           <p className="empty-text">还没有菜品，请先添加</p>
         ) : (
-          <div className="dishes-grid">
+          <DishesGrid>
             {store.dishes.map(dish => (
-              <div key={dish.id} className="dish-card">
-                <div className="dish-info">
+              <DishCard key={dish.id} >
+                <DishInfo>
                   <h4>{dish.title}</h4>
-                  <p className="category-label">{dish.kind?.title}</p>
-                </div>
-                <div className='operation'>
-                  <button
+                  <CategoryLabel>{dish.kind?.title}</CategoryLabel>
+                </DishInfo>
+                <Operation>
+                  <Button
                     onClick={() => deleteDish(dish.id)}
-                    className="delete-button"
+                    className="delete"
                   >
                     <Trash2 size={18} />
-                  </button>
-                  <button
-                    className="delete-button"
-                    onClick={() => local.setKV('editDish', dish)}
+                  </Button>
+                  <Button
+                    className="delete"
+                    onClick={() => localProxy.setKV('editDish', dish)}
                   >
                     <PencilLine size={16} />
-                  </button>
-                </div>
-              </div>
+                  </Button>
+                </Operation>
+              </DishCard>
             ))}
-          </div>
+          </DishesGrid>
         )}
-      </div>
+      </DishesList>
       {
-        local.editDish && <Mask>
-          <Dialog>
-            <input className='form-input' style={{ flex: 0 }} defaultValue={local.editDish.title} onChange={e => { local.setKV('editDish', { ...local.editDish, title: e.target.value }) }} />
-            <div className='full-width'>
-              <button className='add-button' style={{ background: 'lightgray' }} onClick={() => local.setKV('editDish', null)}>取消</button>
-              <button className='add-button' onClick={() => { putDish(local.editDish.id, local.editDish.title) }}>确定</button>
-            </div>
-          </Dialog>
+        localState.editDish && <Mask>
+          <Modal>
+            <ModalHeader>
+              <h3>修改</h3>
+              <div onClick={() => { localProxy.setKV('editDish', null) }}>
+                <X size={24} />
+              </div>
+            </ModalHeader>
+            <ModalContent>
+              <input name="edit_dish" className={input_select} style={{ flex: 0, width: '100%' }} defaultValue={localState.editDish.title} onChange={e => { localProxy.setKV('editDish', { ...localState.editDish, title: e.target.value }) }} />
+            </ModalContent>
+
+            <ModalFooter>
+              <Button className='close' onClick={() => localProxy.setKV('editDish', null)}>取消</Button>
+              <Button className='add' onClick={() => { putDish(localState.editDish.id, localState.editDish.title) }}>确定</Button>
+            </ModalFooter>
+          </Modal>
         </Mask>
       }
-    </div>
+    </Main>
   )
 }
 

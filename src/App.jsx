@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react'
-import './App.css'
 import MealPlanner from './components/MealPlanner'
 import DishManager from './components/DishManager'
 import { CalendarDays, ChefHat } from 'lucide-react'
@@ -7,9 +6,12 @@ import { getAccessToken, getDishes, getKinds, getProfile } from './apis'
 import { formatDate } from 'date-fns'
 import UserStatus from './components/UserStatus'
 import { useSnapshot } from 'valtio'
-import global from './global/index'
+import global from './global'
+import { AlignAside } from './styles/common'
+import LogoSVG from './asserts/logo.svg?react';
+import { Wrap, AppHeader, HeaderContent, AppMain, Logo, TabNavigation, TabButton } from './styles/App'
 
-const App = () => {
+export default () => {
   const store = useSnapshot(global)
   const [activeTab, setActiveTab] = useState('planner')
 
@@ -45,40 +47,38 @@ const App = () => {
     init()
   }, [])
   return (
-    <div className="app">
-      <header className="app-header">
-        <div className="header-content align-aside">
-          <div className="logo">
-            <img src="/menu-plan/logo.png" style={{ width: 30 }} />
+    <Wrap>
+      <AppHeader>
+        <HeaderContent className={AlignAside}>
+          <Logo>
+            <LogoSVG style={{ width: 30, height: 30 }} />
             <h1>吃什么</h1>
-          </div>
+          </Logo>
 
-          <div className="tab-navigation">
-            <button
-              className={`tab-button ${activeTab === 'planner' ? 'active' : ''}`}
+          <TabNavigation>
+            <TabButton
+              className={activeTab === 'planner' ? 'active' : ''}
               onClick={() => setActiveTab('planner')}
-              style={{ fontSize: 18 }}
             >
               <CalendarDays size={18} /> {formatDate(store.currentDateTime, 'yyyy-MM')}
-            </button>
-            <button
-              className={`tab-button ${activeTab === 'dishes' ? 'active' : ''}`}
+            </TabButton>
+            <TabButton
+              className={activeTab === 'dishes' ? 'active' : ''}
               onClick={() => setActiveTab('dishes')}
             >
               <ChefHat size={20} style={{ marginRight: '4px' }} />
-              菜品管理
-            </button>
-          </div>
+              菜品
+            </TabButton>
+          </TabNavigation>
 
           <UserStatus />
-        </div>
-      </header>
+        </HeaderContent>
+      </AppHeader>
 
-      <main className="app-main">
+      <AppMain>
         {activeTab === 'planner' && <MealPlanner />}
         {activeTab === 'dishes' && <DishManager />}
-      </main>
-    </div>
+      </AppMain>
+    </Wrap>
   )
-}
-export default App;
+};

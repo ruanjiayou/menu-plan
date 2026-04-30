@@ -1,10 +1,30 @@
+import { useRef } from 'react'
 import { startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, subDays, addDays, formatDate, } from 'date-fns'
 import storage from '../utils/storage';
 import { getDateRepeatedList, groupBy } from '../utils/index'
-import { proxy } from 'valtio'
+import { proxy, useSnapshot } from 'valtio'
 import { proxyMap } from 'valtio/utils'
 import { App } from './App'
 import { User } from './User'
+
+/**
+ * @template T
+ * @param {T} initialState - 初始状态对象
+ * @returns {[T, T]} [localState, localProxy] - 快照和代理对象
+ */
+export function useLocalProxy(initialState) {
+  // 保持 proxy 引用不变
+  const ref = useRef()
+
+  if (!ref.current) {
+    ref.current = proxy(initialState)
+  }
+
+  // 订阅变化 - 这会自动触发重新渲染
+  const snap = useSnapshot(ref.current)
+
+  return [snap, ref.current]
+}
 
 const store = proxy({
   app: App,
@@ -17,6 +37,12 @@ const store = proxy({
     const monthStart = startOfMonth(this.currentDateTime)
     const monthEnd = endOfMonth(this.currentDateTime)
     return eachDayOfInterval({ start: monthStart, end: monthEnd })
+  },
+  get prevMonth() {
+    return subMonths(this.currentDateTime, 1)
+  },
+  get nextMonth() {
+    return addMonths(this.currentDateTime, 1)
   },
   get this42day() {
     const monthStart = startOfMonth(this.currentDateTime);
@@ -69,21 +95,17 @@ const store = proxy({
       this.dateRecordsMap.set(record.date, [])
       records = this.dateRecordsMap.get(record.date)
     }
-    const arr = toJS(records);
-    arr.push(record)
     records.push(record)
-    storage.setValue(record.date, JSON.stringify(arr))
+    storage.setValue(record.date, JSON.stringify(records))
   },
   removeDateRecord(record) {
     const records = this.dateRecordsMap.get(record.date)
     if (records) {
-      const arr = toJS(records)
-      const idx = arr.findIndex(r => r.id === record.id)
+      const idx = records.findIndex(r => r.id === record.id)
       if (idx !== -1) {
         records.splice(idx, 1)
-        arr.splice(idx, 1)
       }
-      storage.setValue(record.date, JSON.stringify(arr))
+      storage.setValue(record.date, JSON.stringify(records))
     }
   },
   // 菜品管理
@@ -126,6 +148,11 @@ const store = proxy({
   },
   subMonth() {
     this.currentDateTime = subMonths(new Date(this.currentDateTime), 1)
+  },
+  logout() {
+    this.user.profile = null;
+    this.user.access_token = '';
+    this.user.refresh_token = '';
   }
 });
 

@@ -2,42 +2,52 @@ import React, { useState, useEffect, useRef } from 'react'
 import { format, isSameMonth, formatDate, } from 'date-fns'
 import { getRecordsByDate, } from '../apis'
 import DayMealSelector from './DayMealSelector'
-import '../styles/MealPlanner.css'
 
 import { getDateRepeatedList } from '../utils'
 import { useSnapshot } from 'valtio'
 import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css';
 import global from '../global'
+
+import {
+  Main,
+  CalendarDays,
+  CalendarDay,
+  CalendarGrid,
+  Weekdays,
+  Weekday,
+  outside,
+  DayNumber,
+  MealBlock,
+  MealLabel,
+  MealDishes,
+  DishTag,
+} from '../styles/MealPlanner'
 
 const OneDish = ({ item }) => {
   return (
-    <span
-      key={item.id}
-      className={`dish-tag ${item.repeated ? 'repeated' : ''}`}
+    <DishTag
+      className={`dish-tag ${item.repeated ? 'repreated' : ''}`}
     >
       {item.dish.title}
-    </span>
+    </DishTag>
   )
 }
 
-const Grids42 = ({ days, setSelectedDate }) => {
-  const store = useSnapshot(global);
-  const [todayDate] = useState(formatDate(new Date(), 'yyyy-MM-dd'))
-  return <div className="calendar-days">
+const Grids42 = ({ month, today, days, setSelectedDate }) => {
+  return <CalendarDays>
     {days.map(day => {
-      const dateStr = format(day, 'yyyy-MM-dd')
-      const dayMeals = global.dateRecordsMap.get(dateStr) || [];
+      const date = format(day, 'yyyy-MM-dd')
+      const dayMeals = global.dateRecordsMap.get(date) || [];
       const lunch = dayMeals.filter(v => v.type === 'lunch')
       const dinner = dayMeals.filter(v => v.type === 'dinner')
-      const sameMonth = isSameMonth(day, store.currentDateTime)
+      const sameMonth = isSameMonth(day, month)
+
       return (
-        <div
-          key={dateStr}
-          className={`calendar-day ${!sameMonth ? 'outside' : ''} ${dateStr === todayDate ? 'today' : ''}`}
+        <CalendarDay
+          key={date}
+          className={`${!sameMonth ? outside : ''} ${date === today ? 'today' : ''}`}
           onClick={() => {
             if (sameMonth) {
-              const date = formatDate(day, 'yyyy-MM-dd');
               if (!global.dateRecordsMap.get(date)) {
                 global.setDateRecords(date, [])
               }
@@ -45,62 +55,62 @@ const Grids42 = ({ days, setSelectedDate }) => {
             }
           }}
         >
-          <div className="day-number">{format(day, 'd')}</div>
+          <DayNumber>{format(day, 'd')}</DayNumber>
           {/* 午餐区块 */}
-          <div className="meal-block lunch-block">
-            <div className="meal-label">午</div>
-            <div className="meal-dishes">
+          <MealBlock className="lunch-block">
+            <MealLabel className='lunch'>午</MealLabel>
+            <MealDishes>
               {lunch.map(v => (
                 <OneDish item={v} key={v.id} />
               ))}
-            </div>
-          </div>
+            </MealDishes>
+          </MealBlock>
           {/* 晚餐区块 */}
-          <div className="meal-block dinner-block">
-            <div className="meal-label">晚</div>
-            <div className="meal-dishes">
+          <MealBlock className="dinner-block">
+            <MealLabel className='dinner'>晚</MealLabel>
+            <MealDishes>
               {dinner.map(v => (
                 <OneDish item={v} key={v.id} />
               ))}
-            </div>
-          </div>
-        </div>
+            </MealDishes>
+          </MealBlock>
+        </CalendarDay>
       )
     })}
-  </div>
+  </CalendarDays>
 }
 
 const MealPlanner = () => {
-  const store = useSnapshot(global)
+  const globalState = useSnapshot(global)
   const [selectedDate, setSelectedDate] = useState(null)
   const swiperRef = useRef(null);
+  const date = formatDate(globalState.currentDateTime, 'yyyy-MM-dd')
 
   useEffect(() => {
     loadDateRecords()
-    const date = formatDate(store.currentDateTime, 'yyyy-MM-dd')
     // 获取本月所需数据(本月+前后7天)
     getRecordsByDate(date).then(list => {
       global.setRecordsMap(list)
     })
-  }, [store.currentDateTime])
+  }, [globalState.currentDateTime])
 
   const loadDateRecords = async () => {
-    global.loadLocalRecords(store.currentDateTime)
+    global.loadLocalRecords(globalState.currentDateTime)
     // 计算本月部分数据的重复菜品
-    // store.calc_repeat(store.currentDateTime)
+    // globalState.calc_repeat(globalState.currentDateTime)
   }
 
   const onChange = () => {
-    global.setRecordsMap(store.dateRecordsMap)
+    global.setRecordsMap(globalState.dateRecordsMap)
   }
   return (
-    <div className="meal-planner">
-      <div className="calendar-grid">
-        <div className="weekdays">
+    <Main>
+      <CalendarGrid>
+        <Weekdays>
           {['周一', '周二', '周三', '周四', '周五', '周六', '周日'].map(day => (
-            <div key={day} className="weekday">{day}</div>
+            <Weekday key={day}>{day}</Weekday>
           ))}
-        </div>
+        </Weekdays>
         <Swiper
           initialSlide={1} // 默认显示第二个
           modules={[]}
@@ -108,7 +118,7 @@ const MealPlanner = () => {
           style={{ width: '100%' }}
           spaceBetween={50}
           slidesPerView={1}
-          onSlideChangeTransitionEnd={(evt) => {
+          onTransitionEnd={(evt) => {
             if (evt.activeIndex === 1) {
               return;
             }
@@ -121,16 +131,16 @@ const MealPlanner = () => {
           }}
         >
           <SwiperSlide id='1'>
-            <Grids42 days={store.prev42day} setSelectedDate={setSelectedDate} />
+            <Grids42 days={globalState.prev42day} month={globalState.prevMonth} today={globalState.currentDateTime} setSelectedDate={setSelectedDate} />
           </SwiperSlide>
           <SwiperSlide id='2'>
-            <Grids42 days={store.this42day} setSelectedDate={setSelectedDate} />
+            <Grids42 days={globalState.this42day} month={globalState.currentDateTime} today={globalState.currentDateTime} setSelectedDate={setSelectedDate} />
           </SwiperSlide>
           <SwiperSlide id='3'>
-            <Grids42 days={store.next42day} setSelectedDate={setSelectedDate} />
+            <Grids42 days={globalState.next42day} month={globalState.nextMonth} today={globalState.currentDateTime} setSelectedDate={setSelectedDate} />
           </SwiperSlide>
         </Swiper>
-      </div>
+      </CalendarGrid>
       {selectedDate && (
         <DayMealSelector
           date={selectedDate}
@@ -138,7 +148,7 @@ const MealPlanner = () => {
           onClose={() => setSelectedDate(null)}
         />
       )}
-    </div>
+    </Main>
   )
 }
 export default MealPlanner

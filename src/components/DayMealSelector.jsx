@@ -161,7 +161,7 @@ const DayMealSelector = ({ date, onChange, onClose }) => {
             <Button
               className='add'
               onClick={() => {
-                localProxy.closeDishes('dinner');
+                localProxy.openDishes('dinner');
               }}
             >
               <Plus size={16} /> 添加菜品

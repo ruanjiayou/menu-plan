@@ -34,6 +34,7 @@ const OneDish = ({ item }) => {
 }
 
 const Grids42 = ({ month, today, days, setSelectedDate }) => {
+  const today_date = formatDate(today, 'yyyy-MM-dd');
   return <CalendarDays>
     {days.map(day => {
       const date = format(day, 'yyyy-MM-dd')
@@ -45,7 +46,7 @@ const Grids42 = ({ month, today, days, setSelectedDate }) => {
       return (
         <CalendarDay
           key={date}
-          className={`${!sameMonth ? outside : ''} ${date === today ? 'today' : ''}`}
+          className={`${!sameMonth ? outside : ''} ${date === today_date ? 'today' : ''}`}
           onClick={() => {
             if (sameMonth) {
               if (!global.dateRecordsMap.get(date)) {

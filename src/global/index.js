@@ -32,35 +32,13 @@ const store = proxy({
   kinds: [],
   dishes: [],
   currentDateTime: new Date(),
+  today: formatDate(new Date(), 'yyyy-MM-dd'),
   dateRecordsMap: proxyMap(),
-  get daysInMonth() {
-    const monthStart = startOfMonth(this.currentDateTime)
-    const monthEnd = endOfMonth(this.currentDateTime)
-    return eachDayOfInterval({ start: monthStart, end: monthEnd })
-  },
-  get prevMonth() {
-    return subMonths(this.currentDateTime, 1)
-  },
-  get nextMonth() {
-    return addMonths(this.currentDateTime, 1)
-  },
-  get this42day() {
-    const monthStart = startOfMonth(this.currentDateTime);
-    const start_of42 = subDays(monthStart, (monthStart.getDay() === 0 ? 7 : monthStart.getDay()) - 1);
-    const end_of42 = addDays(start_of42, 41);
-    return eachDayOfInterval({ start: start_of42, end: end_of42 })
-  },
-  get prev42day() {
-    const monthStart = startOfMonth(subMonths(this.currentDateTime, 1));
-    const start_of42 = subDays(monthStart, (monthStart.getDay() === 0 ? 7 : monthStart.getDay()) - 1);
-    const end_of42 = addDays(start_of42, 41);
-    return eachDayOfInterval({ start: start_of42, end: end_of42 })
-  },
-  get next42day() {
-    const monthStart = startOfMonth(addMonths(this.currentDateTime, 1));
-    const start_of42 = subDays(monthStart, (monthStart.getDay() === 0 ? 7 : monthStart.getDay()) - 1);
-    const end_of42 = addDays(start_of42, 41);
-    return eachDayOfInterval({ start: start_of42, end: end_of42 })
+  get months() {
+    const curr = formatDate(this.currentDateTime, 'yyyy-MM-dd');
+    const prev = formatDate(subMonths(this.currentDateTime, 1), 'yyyy-MM-dd')
+    const next = formatDate(addMonths(this.currentDateTime, 1), 'yyyy-MM-dd')
+    return [prev, curr, next];
   },
   // 从本地操作    
   loadLocalRecords(datetime) {

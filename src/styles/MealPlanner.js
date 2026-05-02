@@ -85,13 +85,7 @@ export const CalendarDay = styled.div`
   }
 `
 export const outside = css`
-  color: lightgray;
-  & .lunch-block .lunch {
-    background-color: #ff980030;
-  }
-  & .dinner-block .dinner {
-    background-color: #2196f330;
-  }
+  opacity: 0.5;
 `
 export const DayNumber = styled.div`
   font-weight: 600;
@@ -148,7 +142,7 @@ export const DishTag = styled.span`
   text-overflow: ellipsis;
   max-width: 100%;
 
-  @media (min-width: 768px) {
+  @media (max-width: 768px) {
     font-size: 10px;
   }
 

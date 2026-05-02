@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react'
-import { format, isSameMonth, formatDate, } from 'date-fns'
+import React, { useState, useEffect, useRef, memo } from 'react'
+import { format, subDays, addDays, isSameMonth, formatDate, startOfMonth, endOfMonth, eachDayOfInterval, subMonths, addMonths, } from 'date-fns'
 import { getRecordsByDate, } from '../apis'
 import DayMealSelector from './DayMealSelector'
 
@@ -33,12 +33,17 @@ const OneDish = ({ item }) => {
   )
 }
 
-const Grids42 = ({ month, today, days, setSelectedDate }) => {
-  const today_date = formatDate(today, 'yyyy-MM-dd');
+const Grids42 = ({ month, today, setSelectedDate }) => {
+  const globalState = useSnapshot(global)
+  const date = new Date(month);
+  const monthStart = startOfMonth(date);
+  const start_of42 = subDays(monthStart, (monthStart.getDay() === 0 ? 7 : monthStart.getDay()) - 1);
+  const end_of42 = addDays(start_of42, 41);
+  const days = eachDayOfInterval({ start: start_of42, end: end_of42 })
   return <CalendarDays>
     {days.map(day => {
       const date = format(day, 'yyyy-MM-dd')
-      const dayMeals = global.dateRecordsMap.get(date) || [];
+      const dayMeals = globalState.dateRecordsMap.get(date) || [];
       const lunch = dayMeals.filter(v => v.type === 'lunch')
       const dinner = dayMeals.filter(v => v.type === 'dinner')
       const sameMonth = isSameMonth(day, month)
@@ -46,10 +51,11 @@ const Grids42 = ({ month, today, days, setSelectedDate }) => {
       return (
         <CalendarDay
           key={date}
-          className={`${!sameMonth ? outside : ''} ${date === today_date ? 'today' : ''}`}
+          meals={dayMeals}
+          className={`${!sameMonth ? outside : ''} ${date === today ? 'today' : ''}`}
           onClick={() => {
             if (sameMonth) {
-              if (!global.dateRecordsMap.get(date)) {
+              if (!globalState.dateRecordsMap.get(date)) {
                 global.setDateRecords(date, [])
               }
               setSelectedDate(date)
@@ -81,16 +87,20 @@ const Grids42 = ({ month, today, days, setSelectedDate }) => {
   </CalendarDays>
 }
 
+const CacheGrid = memo(({ month, today, setSelectedDate }) => {
+  return <Grids42 month={month} today={today} setSelectedDate={setSelectedDate} />
+}, (prev, next) => {
+  return prev.month === next.month
+})
+
 const MealPlanner = () => {
   const globalState = useSnapshot(global)
   const [selectedDate, setSelectedDate] = useState(null)
   const swiperRef = useRef(null);
-  const date = formatDate(globalState.currentDateTime, 'yyyy-MM-dd')
-
   useEffect(() => {
     loadDateRecords()
     // 获取本月所需数据(本月+前后7天)
-    getRecordsByDate(date).then(list => {
+    getRecordsByDate(formatDate(globalState.currentDateTime, 'yyyy-MM')).then(list => {
       global.setRecordsMap(list)
     })
   }, [globalState.currentDateTime])
@@ -131,15 +141,11 @@ const MealPlanner = () => {
             evt.slideTo(1, 0);
           }}
         >
-          <SwiperSlide id='1'>
-            <Grids42 days={globalState.prev42day} month={globalState.prevMonth} today={globalState.currentDateTime} setSelectedDate={setSelectedDate} />
-          </SwiperSlide>
-          <SwiperSlide id='2'>
-            <Grids42 days={globalState.this42day} month={globalState.currentDateTime} today={globalState.currentDateTime} setSelectedDate={setSelectedDate} />
-          </SwiperSlide>
-          <SwiperSlide id='3'>
-            <Grids42 days={globalState.next42day} month={globalState.nextMonth} today={globalState.currentDateTime} setSelectedDate={setSelectedDate} />
-          </SwiperSlide>
+          {globalState.months.map(month => (
+            <SwiperSlide key={month} id={month}>
+              <CacheGrid month={month} today={globalState.today} setSelectedDate={setSelectedDate} />
+            </SwiperSlide>
+          ))}
         </Swiper>
       </CalendarGrid>
       {selectedDate && (

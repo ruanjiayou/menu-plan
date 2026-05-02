@@ -137,13 +137,13 @@ const DayMealSelector = ({ date, onChange, onClose }) => {
                         {dish.dish.title}
                       </DishTagContent>
                       <DishTagActions>
-                        <button
-                          className={`repeat-check ${dish.can_repeated ? 'enabled' : 'disabled'}`}
+                        <RepeatCheck
+                          className={`${dish.can_repeated ? 'enabled' : 'disabled'}`}
                           onClick={() => handleToggleDishRepeat(dish.id)}
                           title={dish.can_repeated ? '不参与重复判断' : '参与重复判断'}
                         >
                           {dish.can_repeated ? <Eye size={12} /> : <EyeOff size={12} />}
-                        </button>
+                        </RepeatCheck>
                         <Button className='delete'
                           onClick={() => handleRemoveDish(dish)}
                           title="删除菜品"

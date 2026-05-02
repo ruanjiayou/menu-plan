@@ -31,7 +31,7 @@ export const Mask = styled.div`
 export const Modal = styled.div`
   background: white;
   border-radius: 12px;
-  max-width: 800px;
+  max-width: 600px;
   width: 100%;
   max-height: 80vh;
   display: flex;

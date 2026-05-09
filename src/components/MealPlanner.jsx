@@ -123,6 +123,17 @@ const MealPlanner = () => {
           ))}
         </Weekdays>
         <Swiper
+          // 阻止 Swiper 触发浏览器的默认滚动/手势行为
+          touchMoveStopPropagation={true}
+          // 阻止冒泡，防止嵌套 Swiper 时触发父级滑动
+          nested={true}
+          // 模拟手势时的边缘行为（类似于 CSS 的 overscroll-behavior）
+          // 防止滑动到最后一张时带动页面弹性滚动
+          edgeSwipeDetection={true}
+          edgeSwipeThreshold={20}
+          // 重要的触摸保护
+          touchStartPreventDefault={false} // 允许某些点击行为，但滑动仍由 Swiper 接管
+
           initialSlide={1} // 默认显示第二个
           modules={[]}
           ref={ref => swiperRef.current = ref}

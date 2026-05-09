@@ -13,6 +13,7 @@
         "@linaria/react": "^7.0.1",
         "axios": "^1.15.0",
         "date-fns": "^4.1.0",
+        "drawer-menu": "github:ruanjiayou/DrawerMenu",
         "lucide-react": "^1.8.0",
         "rc-dropdown": "^4.2.1",
         "react": "^19.2.5",

@@ -54,15 +54,6 @@ export default defineConfig(({ command, mode }) => {
         brotliSize: true, // 显示 brotli 后的压缩大小
       }),
     ],
-    optimizeDeps: {
-      include: ['lucide-react'],  // 强制预构建 lucide-react
-      esbuildOptions: {
-        // 处理 "use client" 指令
-        supported: {
-          'dynamic-import': true
-        }
-      }
-    },
     build: {
       outDir: 'meal',
       commonjsOptions: {

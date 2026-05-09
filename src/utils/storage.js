@@ -1,5 +1,5 @@
 const storage = {
-  prefix: 'menu-plan:',
+  prefix: 'meal:',
   setValue(key, value) {
     window.localStorage.setItem(
       this.prefix + key,

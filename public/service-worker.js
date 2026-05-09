@@ -44,7 +44,7 @@ const stripVaryHeaderPlugin = {
 
 // 🌐 缓存 API 接口
 registerRoute(
-  ({ url }) => url.pathname.startsWith('/gw/menu-plan'),
+  ({ url }) => url.pathname.startsWith('/gw/meal'),
   new StaleWhileRevalidate({
     cacheName: 'api-cache',
     networkTimeoutSeconds: 3,

@@ -5,7 +5,7 @@ let isRefreshing = false;
 let requestQueue = [];
 
 const shttp = axios.create({
-  baseURL: '/gw/menu-plan/',
+  baseURL: '/gw/meal/',
   withCredentials: false,
   timeout: 20000,
 });

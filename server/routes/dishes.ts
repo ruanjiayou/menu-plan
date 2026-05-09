@@ -1,7 +1,7 @@
 import { Elysia } from "elysia";
 import db from "../prisma";
 import Response from '../utils/Response'
-import type { DishCreateInput, DishUpdateInput } from "../prisma/db/models";
+import type { DishCreateInput, DishUpdateInput } from "../prisma/generated/models";
 
 export const dishesRoutes = new Elysia({ prefix: "/api/dishes" })
   .decorate('Response', new Response())

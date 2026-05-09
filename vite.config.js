@@ -54,17 +54,30 @@ export default defineConfig(({ command, mode }) => {
         brotliSize: true, // 显示 brotli 后的压缩大小
       }),
     ],
+    optimizeDeps: {
+      include: ['lucide-react'],  // 强制预构建 lucide-react
+      esbuildOptions: {
+        // 处理 "use client" 指令
+        supported: {
+          'dynamic-import': true
+        }
+      }
+    },
     build: {
-      outDir: 'menu-plan',
+      outDir: 'meal',
+      commonjsOptions: {
+        include: [/lucide-react/, /node_modules/]
+      },
     },
     server: {
       host: true,
       port: 3060,
       allowedHosts: ['max.local', 'jiayou.work'],
       proxy: {
-        '/gw/menu-plan': {
-          target: 'http://jiayou.work', // 后端接口地址
+        '/gw/meal': {
+          target: 'https://jiayou.work', // 后端接口地址
           changeOrigin: true, // 允许跨域
+          // rewrite: path => path.replace(`/gw/meal`, '')
         }
       }
     }

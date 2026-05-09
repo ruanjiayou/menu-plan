@@ -1,8 +1,7 @@
 import { Elysia } from "elysia";
-import { v7 } from "uuid"
 import db from "../prisma";
 import Response from '../utils/Response'
-import type { KindCreateInput, KindUpdateInput } from "../prisma/db/models";
+import type { KindCreateInput, KindUpdateInput } from "../prisma/generated/models";
 
 export const kindsRoutes = new Elysia({ prefix: "/api/kinds" })
   .decorate('Response', new Response())

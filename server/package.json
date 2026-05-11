@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "start": "bun run index.ts",
-    "dev": "bun run  --watch ./ index.ts",
+    "dev": "DATABASE_DIR=file:./prisma bun run  --watch ./ index.ts",
     "create-schema": "bunx --bun prisma init --datasource-provider sqlite --output ./db",
     "create-model": "bunx --bun prisma generate",
     "create-data": "bunx prisma migrate dev --name init"
@@ -24,7 +24,6 @@
     "@prisma/adapter-libsql": "^7.7.0",
     "@prisma/client": "^7.7.0",
     "date-fns": "^4.1.0",
-    "dotenv": "^17.4.2",
     "elysia": "^1.4.28",
     "lodash": "^4.18.1",
     "uuid": "^13.0.0"

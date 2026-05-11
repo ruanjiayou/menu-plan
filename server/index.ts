@@ -4,6 +4,8 @@ import { kindsRoutes } from "./routes/kinds";
 import { dishesRoutes } from "./routes/dishes";
 import { recordsRoutes } from "./routes/records";
 
+const PORT = process.env.PORT;
+
 const app = new Elysia()
 app.use(cors({
   origin: true,           // 允许所有来源
@@ -27,6 +29,6 @@ app
   .use(kindsRoutes)
   .use(dishesRoutes)
   .use(recordsRoutes)
-  .listen(3366);
+  .listen(PORT);
 
-console.log("🦊 服务器运行在 http://localhost:3366");
+console.log(`🦊 服务器运行在 http://localhost:${PORT}`);

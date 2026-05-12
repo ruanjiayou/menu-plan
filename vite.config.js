@@ -2,8 +2,8 @@ import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import svgr from 'vite-plugin-svgr';
-import { visualizer } from 'rollup-plugin-visualizer';
 import wyw from '@wyw-in-js/vite';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 export default defineConfig(({ command, mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
@@ -16,7 +16,7 @@ export default defineConfig(({ command, mode }) => {
     orientation: "portrait",
     start_url: `${env.APP_SCOPE}`,
     id: env.APP_NAME,
-    scope: `${env.APP_SCOPE}`,
+    scope: `/`,
     display: "fullscreen",
     icons: [
       {
@@ -29,7 +29,14 @@ export default defineConfig(({ command, mode }) => {
   return {
     base: env.APP_SCOPE,
     plugins: [
-      wyw(),
+      wyw({
+        preserveCssPaths: true,
+        transformLibraries: true,
+        include: [/node_modules\/user-info/, './src/**/*.{ts,tsx,js,jsx}'],
+        babelOptions: {
+          presets: ['@babel/preset-typescript', '@babel/preset-react', '@linaria/babel-preset',],
+        },
+      }),
       react(),
       svgr(),
       VitePWA({
@@ -54,11 +61,19 @@ export default defineConfig(({ command, mode }) => {
         brotliSize: true, // 显示 brotli 后的压缩大小
       }),
     ],
+    resolve: {
+      dedupe: ['react', 'react-dom']
+    },
+    optimizeDeps: {
+      // 强制预构建包含 Linaria 的依赖
+      include: [
+        'user-info',
+        'react-is',
+        'classnames',
+        '@linaria/core', '@linaria/react'],
+    },
     build: {
       outDir: 'meal',
-      commonjsOptions: {
-        include: [/lucide-react/, /node_modules/]
-      },
     },
     server: {
       host: true,

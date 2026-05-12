@@ -1,6 +1,6 @@
 import { useSnapshot } from 'valtio'
 import { Trash2, Plus, PencilLine, X } from 'lucide-react'
-import global, { useLocalProxy } from '../global'
+import global, { useLocalProxy, type IDish } from '../global'
 import { createDish, createKind, destryDish, destryKind, updateDish } from '../apis'
 import { FullWidth, Button, Mask, Modal, ModalFooter, ModalHeader, ModalContent, } from '../styles/common';
 
@@ -18,14 +18,21 @@ import {
 } from '../styles/DishManager'
 
 const DishManager = () => {
-  const [localState, localProxy] = useLocalProxy({
+  const [localState, localProxy] = useLocalProxy<{
+    newDishKindId: string;
+    newDishTitle: string;
+    newKindId: string;
+    newKindTitle: string;
+    editDish: Partial<IDish> | null;
+    setKV: Function;
+  }>({
     newDishTitle: '',
     newDishKindId: '',
     newKindId: '',
     newKindTitle: '',
     editDish: null,
-    setKV(k, v) {
-      console.log(v)
+    setKV(k: string, v: any) {
+      //@ts-ignore
       this[k] = v
     }
   })
@@ -47,15 +54,15 @@ const DishManager = () => {
       result.data.info.kind = kind ? kind : { title: 'None' }
       global.addDish(result.data.info)
       localProxy.setKV('newDishTitle', '')
-      const inputs = document.querySelectorAll('#add-dish input')
-      inputs.forEach(o => {
+      const inputs = document.querySelectorAll<HTMLInputElement>('#add-dish input')
+      inputs.forEach((o) => {
         o.value = '';
       });
     } else {
       return alert('添加失败 ' + result.message)
     }
   }
-  const putDish = async (id, title) => {
+  const putDish = async (id: string, title: string) => {
     const result = await updateDish(id, { title })
     if (result.success) {
       global.putDish(id, { title })
@@ -65,7 +72,7 @@ const DishManager = () => {
     }
   }
 
-  const deleteDish = async (id) => {
+  const deleteDish = async (id: string) => {
     const result = await destryDish(id)
     if (result.success) {
       global.delDish(id)
@@ -89,7 +96,7 @@ const DishManager = () => {
       store.addKind(result.data.info)
       localProxy.setKV('newKindId', '')
       localProxy.setKV('newKindTitle', '')
-      const inputs = document.querySelectorAll('#add-kind input')
+      const inputs = document.querySelectorAll<HTMLInputElement>('#add-kind input')
       inputs.forEach(o => {
         o.value = '';
       });
@@ -98,7 +105,7 @@ const DishManager = () => {
     }
   }
 
-  const deleteKind = async (id) => {
+  const deleteKind = async (id: string) => {
     const result = await destryKind(id)
     if (result.success) {
       global.delKind(id)
@@ -233,12 +240,15 @@ const DishManager = () => {
               </div>
             </ModalHeader>
             <ModalContent>
-              <input name="edit_dish" className={input_select} style={{ flex: 0, width: '100%' }} defaultValue={localState.editDish.title} onChange={e => { localProxy.setKV('editDish', { ...localState.editDish, title: e.target.value }) }} />
+              <input name="edit_dish" className={input_select} style={{ flex: 0, width: '100%' }} defaultValue={localState.editDish?.title} onChange={e => { localProxy.setKV('editDish', { ...localState.editDish, title: e.target.value }) }} />
             </ModalContent>
 
             <ModalFooter>
               <Button className='close' onClick={() => localProxy.setKV('editDish', null)}>取消</Button>
-              <Button className='add' onClick={() => { putDish(localState.editDish.id, localState.editDish.title) }}>确定</Button>
+              <Button className='add' onClick={() => {
+                //@ts-ignore
+                putDish(localState.editDish.id, localState.editDish.title)
+              }}>确定</Button>
             </ModalFooter>
           </Modal>
         </Mask>

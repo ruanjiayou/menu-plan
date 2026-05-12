@@ -1,7 +1,7 @@
 import { proxy } from 'valtio'
 
-export const User = proxy({
-  profile: null,
+export const App = proxy({
+  baseURL: '',
   access_token: '',
   refresh_token: '',
 })

@@ -1,7 +1,7 @@
 import { X, Plus, Check, Eye, EyeOff } from 'lucide-react'
 import { createRecord, destryRecord } from '../apis'
 import { v7 } from 'uuid'
-import global, { useLocalProxy } from '../global'
+import global, { useLocalProxy, type IDish, type IRecord } from '../global'
 import { useSnapshot } from 'valtio'
 import { Button, Mask, Modal, ModalHeader, ModalContent, ModalFooter } from '../styles/common';
 import {
@@ -19,8 +19,9 @@ import {
   DishCellChecked,
   DishCellRepeated
 } from '../styles/DayMealSelector'
+import type { MouseEventHandler } from 'react'
 
-const DayMealSelector = ({ date, onChange, onClose }) => {
+const DayMealSelector = ({ date, onChange, onClose }: { date: string, onChange: Function, onClose: MouseEventHandler<HTMLDivElement> }) => {
   const store = useSnapshot(global)
 
   const todayDishes = store.getDateRecords(date) || []
@@ -37,7 +38,7 @@ const DayMealSelector = ({ date, onChange, onClose }) => {
     //     item.can_repeated = !item.can_repeated
     //   }
     // },
-    openDishes(type) {
+    openDishes(type: string) {
       this.type = type
       this.showDishList = true;
     },
@@ -47,22 +48,22 @@ const DayMealSelector = ({ date, onChange, onClose }) => {
     },
   });
 
-  const handleRemoveDish = async (record) => {
+  const handleRemoveDish = async (record: IRecord) => {
     global.removeDateRecord(record)
     destryRecord(record.id)
   }
 
-  const handleToggleDishRepeat = (id) => {
+  const handleToggleDishRepeat = (id: String) => {
     // localProxy.toggleDishRepeat(id)
   }
-  const handleToggleDish = async (dish) => {
+  const handleToggleDish = async (dish: IDish) => {
     const record = todayDishes.find(d => d.dish_id === dish.id);
     if (record) {
       global.removeDateRecord(record)
       destryRecord(record.id)
     } else {
       const id = v7()
-      const data = { id, dish_id: dish.id, date, type: localState.type, can_repeated: 0, sn: 1, time: new Date() }
+      const data = { id, dish_id: dish.id, date, type: localState!.type, can_repeated: 0, sn: 1, time: new Date() }
       global.addDateRecord({ ...data, dish })
       createRecord(data)
     }
@@ -88,7 +89,7 @@ const DayMealSelector = ({ date, onChange, onClose }) => {
                   return (
                     <DishTagWrapper key={key} className={`${dish.repeated ? 'repeated' : ''}`}>
                       <DishTagContent>
-                        {dish.dish.title}
+                        {dish.dish?.title}
                       </DishTagContent>
                       <DishTagActions>
                         <RepeatCheck
@@ -117,7 +118,7 @@ const DayMealSelector = ({ date, onChange, onClose }) => {
             </SelectedDishesList>
             <Button className='add'
               onClick={() => {
-                localProxy.openDishes('lunch');
+                localProxy!.openDishes('lunch');
               }}
             >
               <Plus size={16} /> 添加菜品
@@ -134,7 +135,7 @@ const DayMealSelector = ({ date, onChange, onClose }) => {
                   return (
                     <DishTagWrapper key={key} className={`${dish.repeated ? 'repeated' : ''}`}>
                       <DishTagContent>
-                        {dish.dish.title}
+                        {dish.dish?.title}
                       </DishTagContent>
                       <DishTagActions>
                         <RepeatCheck
@@ -161,7 +162,7 @@ const DayMealSelector = ({ date, onChange, onClose }) => {
             <Button
               className='add'
               onClick={() => {
-                localProxy.openDishes('dinner');
+                localProxy!.openDishes('dinner');
               }}
             >
               <Plus size={16} /> 添加菜品
@@ -170,12 +171,12 @@ const DayMealSelector = ({ date, onChange, onClose }) => {
         </ModalContent>
       </Modal>
       {/* 菜品选择弹框 */}
-      {localState.showDishList && (
+      {localState!.showDishList && (
         <DishSelectorOverlay
-          categories={store.kinds}
+          // categories={store.kinds}
           date={date}
           onToggleDish={handleToggleDish}
-          onClose={() => { localProxy.closeDishes() }}
+          onClose={() => { localProxy!.closeDishes() }}
         />
       )}
     </Mask>
@@ -183,7 +184,7 @@ const DayMealSelector = ({ date, onChange, onClose }) => {
 }
 
 // 菜品选择组件
-const DishSelectorOverlay = ({ date, onToggleDish, onClose }) => {
+const DishSelectorOverlay = ({ date, onToggleDish, onClose }: any) => {
   const store = useSnapshot(global)
   const selectedDishes = store.getDateRecords(date)
   const dishsByCategory = store.kinds.map(kind => {
@@ -209,7 +210,7 @@ const DishSelectorOverlay = ({ date, onToggleDish, onClose }) => {
               <CategoryTitle>{kind.title}</CategoryTitle>
               <DishesGrid>
                 {dishes.map(dish => {
-                  const isSelected = selectedDishes.findIndex(d => d.dish_id === dish.id) !== -1
+                  const isSelected = selectedDishes!.findIndex(d => d.dish_id === dish.id) !== -1
                   const isRepeated = dish.repeated
                   return (
                     <DishCell

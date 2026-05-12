@@ -2,49 +2,50 @@ import React, { useState, useEffect } from 'react'
 import MealPlanner from './components/MealPlanner'
 import DishManager from './components/DishManager'
 import { CalendarDays, ChefHat } from 'lucide-react'
-import { getAccessToken, getDishes, getKinds, getProfile } from './apis'
+import { getDishes, getKinds, } from './apis'
 import { formatDate } from 'date-fns'
-import UserStatus from './components/UserStatus'
 import { useSnapshot } from 'valtio'
-import global from './global'
+import global, { useLocalProxy } from './global'
 import { AlignAside } from './styles/common'
 import LogoSVG from './asserts/logo.svg?react';
 import { Wrap, AppHeader, HeaderContent, AppMain, Logo, TabNavigation, TabButton } from './styles/App'
+import UserInfo, { User } from 'user-info'
 
 export default () => {
   const store = useSnapshot(global)
+  const user = useSnapshot(User);
   const [activeTab, setActiveTab] = useState('planner')
 
-  useEffect(() => {
-    const search = new URLSearchParams(window.location.search)
-    const refresh_token = search.get('refresh_token')
-    if (refresh_token) {
-      store.user.refresh_token = (refresh_token)
-      window.location.replace(window.location.origin + window.location.pathname)
-    }
-    const init = async () => {
-      if (store.user.refresh_token && !store.user.access_token) {
-        try {
-          const tokens = await getAccessToken(store.user.refresh_token)
-          if (tokens) {
-            global.user.access_token = (tokens.access_token)
-            global.user.refresh_token = (tokens.refresh_token)
-          }
-        } catch (e) {
+  const [localState, localStore] = useLocalProxy({
+    booted: false,
+    loading: false,
+  });
 
-        }
-      }
-      if (store.user.access_token && !store.user.profile) {
-        const result = await getProfile();
-        global.user.profile = (result.item)
-      }
-
+  const init = async () => {
+    try {
+      global.app.access_token = user.access_token;
+      global.app.refresh_token = user.refresh_token;
       const kinds = await getKinds()
       global.kinds = kinds;
       const dishes = await getDishes({ with: 'kind' })
       global.dishes = dishes
-    };
-    init()
+    } catch (err) {
+
+    }
+  }
+  useEffect(() => {
+    if (!localState.booted && user.access_token) {
+      localStore.booted = true
+      init()
+    }
+  }, [user.access_token])
+  useEffect(() => {
+    const search = new URLSearchParams(window.location.search)
+    const refresh_token = search.get('refresh_token')
+    if (refresh_token) {
+      User.setRefreshToken(refresh_token)
+      window.location.replace(window.location.origin + window.location.pathname)
+    }
   }, [])
   return (
     <Wrap>
@@ -71,7 +72,10 @@ export default () => {
             </TabButton>
           </TabNavigation>
 
-          <UserStatus />
+          <UserInfo onLogout={() => {
+            global.app.access_token = '';
+            global.dateRecordsMap.clear()
+          }} />
         </HeaderContent>
       </AppHeader>
 

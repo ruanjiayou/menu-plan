@@ -1,8 +1,32 @@
-import axios from 'axios';
-import { User } from '../global/User';
+import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios';
+import store from '../global';
+import { User } from 'user-info';
+
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    _retry?: boolean;
+  }
+}
+
+type ApiResponse<T> = {
+  success: boolean;
+  code: number;
+  message: string;
+  data: {
+    list?: T[],
+    info?: T
+  };
+};
+
+type RequestMethod = <T = any>(
+  url: string,
+  data?: any,
+  config?: AxiosRequestConfig
+) => Promise<T>;
 
 let isRefreshing = false;
-let requestQueue = [];
+
+let requestQueue: { resolve: Function, reject: Function }[] = [];
 
 const shttp = axios.create({
   baseURL: '/gw/meal/',
@@ -12,8 +36,8 @@ const shttp = axios.create({
 
 shttp.interceptors.request.use(
   (config) => {
-    if (User.access_token) {
-      config.headers['Authorization'] = 'Bearer ' + store.user.access_token;
+    if (store.app.access_token) {
+      config.headers['Authorization'] = 'Bearer ' + store.app.access_token;
     }
     return config;
   },
@@ -40,12 +64,12 @@ shttp.interceptors.response.use(
       isRefreshing = true;
       try {
         const resp = await axios.post(`${store.app.baseURL}/gw/user/oauth/refresh`, null, {
-          headers: { Authorization: store.user.refresh_token, }
+          headers: { Authorization: store.app.refresh_token, }
         });
         if (resp && resp.data && resp.data.code === 0) {
           const tokens = resp.data.data;
-          User.access_token = (tokens.access_token);
-          User.refresh_token = (tokens.refresh_token);
+          User.setAccessToken(tokens.access_token)
+          User.setRefreshToken(tokens.refresh_token)
         }
         // 执行队列中的请求
         requestQueue.forEach(p => p.resolve());
@@ -59,33 +83,26 @@ shttp.interceptors.response.use(
         isRefreshing = false;
       }
     }
+    if (response.data.code === 101010) {
+      User.setAccessToken('')
+    }
+    if (response.data.code === 101020) {
+      User.setRefreshToken('')
+    }
     return response.data;
   },
   (error) => {
     console.log(error, 'response error');
-    if (error.response) {
-      if (error.response.data.code === 101020) {
-        User.access_token = ('');
-      }
-    } else {
-    }
     return Promise.reject(error);
   },
 );
 
-/**
- * @typedef {import('axios').AxiosInstance} AxiosInstance
- * @typedef {import('axios').AxiosRequestConfig} AxiosRequestConfig
- * * @callback CustomRequest
- * <T = any>(config: AxiosRequestConfig) => Promise<T>
- * * @typedef {Omit<AxiosInstance, 'get' | 'post' | 'put' | 'delete' | 'patch'> & {
- * get<T = any>(url: string, config?: AxiosRequestConfig): Promise<{success:boolean,code:number,message:string,data: {list:T[]}|{info:T}}>;
- * post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>;
- * put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>;
- * delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T>;
- * patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T>;
- * }} PureAxiosInstance
- */
+type PureAxiosInstance = Omit<AxiosInstance, 'get' | 'post' | 'put' | 'delete' | 'patch'> & {
+  get: <T = any>(url: string, config?: AxiosRequestConfig) => Promise<ApiResponse<T>>;
+  post: RequestMethod;
+  put: RequestMethod;
+  delete: <T = any>(url: string, config?: AxiosRequestConfig) => Promise<T>;
+  patch: RequestMethod;
+};
 
-/** @type {PureAxiosInstance} */
-export default shttp;
+export default shttp as PureAxiosInstance;

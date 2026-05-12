@@ -6,7 +6,8 @@ import DayMealSelector from './DayMealSelector'
 import { getDateRepeatedList } from '../utils'
 import { useSnapshot } from 'valtio'
 import { Swiper, SwiperSlide } from 'swiper/react';
-import global from '../global'
+import global, { type IRecord } from '../global'
+import { User } from 'user-info'
 
 import {
   Main,
@@ -23,17 +24,17 @@ import {
   DishTag,
 } from '../styles/MealPlanner'
 
-const OneDish = ({ item }) => {
+const OneDish = ({ item }: { item: IRecord }) => {
   return (
     <DishTag
       className={`dish-tag ${item.repeated ? 'repreated' : ''}`}
     >
-      {item.dish.title}
+      {item.dish?.title}
     </DishTag>
   )
 }
 
-const Grids42 = ({ month, today, setSelectedDate }) => {
+const Grids42 = ({ month, today, setSelectedDate }: any) => {
   const globalState = useSnapshot(global)
   const date = new Date(month);
   const monthStart = startOfMonth(date);
@@ -51,7 +52,6 @@ const Grids42 = ({ month, today, setSelectedDate }) => {
       return (
         <CalendarDay
           key={date}
-          meals={dayMeals}
           className={`${!sameMonth ? outside : ''} ${date === today ? 'today' : ''}`}
           onClick={() => {
             if (sameMonth) {
@@ -87,7 +87,7 @@ const Grids42 = ({ month, today, setSelectedDate }) => {
   </CalendarDays>
 }
 
-const CacheGrid = memo(({ month, today, setSelectedDate }) => {
+const CacheGrid = memo(({ month, today, setSelectedDate }: any) => {
   return <Grids42 month={month} today={today} setSelectedDate={setSelectedDate} />
 }, (prev, next) => {
   return prev.month === next.month
@@ -97,13 +97,18 @@ const MealPlanner = () => {
   const globalState = useSnapshot(global)
   const [selectedDate, setSelectedDate] = useState(null)
   const swiperRef = useRef(null);
+  const user = useSnapshot(User)
   useEffect(() => {
-    loadDateRecords()
-    // 获取本月所需数据(本月+前后7天)
-    getRecordsByDate(formatDate(globalState.currentDateTime, 'yyyy-MM')).then(list => {
-      global.setRecordsMap(list)
-    })
-  }, [globalState.currentDateTime])
+    if (user.isLogin) {
+      loadDateRecords()
+      // 获取本月所需数据(本月+前后7天)
+      getRecordsByDate(formatDate(globalState.currentDateTime, 'yyyy-MM')).then(list => {
+        global.setRecordsMap(list)
+      })
+    } else {
+      global.dateRecordsMap.clear()
+    }
+  }, [globalState.currentDateTime, user.isLogin])
 
   const loadDateRecords = async () => {
     global.loadLocalRecords(globalState.currentDateTime)
@@ -112,6 +117,7 @@ const MealPlanner = () => {
   }
 
   const onChange = () => {
+    // @ts-ignore
     global.setRecordsMap(globalState.dateRecordsMap)
   }
   return (
@@ -136,7 +142,7 @@ const MealPlanner = () => {
 
           initialSlide={1} // 默认显示第二个
           modules={[]}
-          ref={ref => swiperRef.current = ref}
+          ref={swiperRef}
           style={{ width: '100%' }}
           spaceBetween={50}
           slidesPerView={1}
